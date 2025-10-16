@@ -27,7 +27,7 @@ class MainApp(tk.Toplevel):
             self.master.destroy() # Hủy cửa sổ gốc (nếu có)
             self.destroy()
 
-    # main_app.py (Chỉnh sửa trong _setup_layout)
+
     def _setup_layout(self):
         """Thiết lập khung giao diện (Grid/Frame)."""
         # Frame cho các trường nhập liệu và nút chức năng
@@ -40,7 +40,7 @@ class MainApp(tk.Toplevel):
         tree_frame.pack(padx=10, pady=5, fill="both", expand=True)
         self.tree_frame = tree_frame
 
-    # main_app.py (Chỉnh sửa trong _setup_input_fields)
+   
     def _setup_input_fields(self):
         """Tạo các nhãn và ô nhập liệu."""
         labels = ""# Giả định labels đã được định nghĩa
@@ -72,7 +72,7 @@ class MainApp(tk.Toplevel):
         # Thiết lập tiêu đề cột
         self.tree.heading("MASV", text="Mã SV")
         self.tree.heading("TEN", text="Họ Tên")
-        self.tree.heading("NAM", text="Năm Sinh")
+        self.tree.heading("NAM", text="Năm")
         self.tree.heading("KHOA", text="Khoa")
 
         # Thiết lập chiều rộng cột (tùy chọn)

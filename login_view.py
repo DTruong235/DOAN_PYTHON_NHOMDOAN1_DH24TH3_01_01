@@ -5,8 +5,11 @@ from tkinter import font
 from PIL import Image, ImageTk
 
 class LoginView:
-    def __init__(self, master):
+    def __init__(self, master,db_manager, main_app_class):
         self.master = master
+        self.db_manager = db_manager       # Lưu trữ để dùng cho MainApp
+        self.MainAppClass = main_app_class # Class của MainApp
+
         self.master.title("Login")
         self.master.geometry("550x300")
         self.master.resizable(False, False)
@@ -43,8 +46,8 @@ class LoginView:
         self.entry_password.config(font=("Arial", 12), foreground="#000000", background="#FFFFFF")
 
         #Hình ảnh con mắt mở và nhắm. Dùng để hiện thị hoặc ẩn mật khẩu
-        open_eye= ImageTk.PhotoImage(Image.open("D:\Python\DTH235802_LAMDUCTRUONG_DOAN\Items\open_eye.png").resize((20, 19)))
-        closed_eye= ImageTk.PhotoImage(Image.open("D:\Python\DTH235802_LAMDUCTRUONG_DOAN\Items\closed_eye.png").resize((20, 19)))
+        open_eye= ImageTk.PhotoImage(Image.open(r"D:\Python\DOAN_PYTHON_NHOMDOAN1_DH24TH3_01_01\Items\open_eye.png").resize((20, 19)))
+        closed_eye= ImageTk.PhotoImage(Image.open(r"D:\Python\DOAN_PYTHON_NHOMDOAN1_DH24TH3_01_01\Items\closed_eye.png").resize((20, 19)))
         self.label_toggle = ttk.Label(master, image=closed_eye)
         self.label_toggle.image = closed_eye
         self.label_toggle.place(x=394, y=152)
@@ -68,19 +71,27 @@ class LoginView:
             self.entry_password.config(show='')
             self.label_toggle.config(image=self.open_eye)
 
-    #Kiểm tra tài khoảng đăng nhập
-    def login(self):
-        username = self.entry_username.get()
-        password = self.entry_password.get()
 
-        if username == "admin" and password == "123":
-            #Xử lý chuyển đổi cửa sổ an toàn:
-            self.master.withdraw()
-            main_window = tk.Toplevel(self.master) 
-            self.MainApp(master=main_window, db_manager=self.db_manager)
-        else:
-            messagebox.showerror("Login Failed", "Invalid username or password.")
-        self.entry_username.delete(0, tk.END)
-        self.entry_password.delete(0, tk.END)
-        
+
+    def login(self):
+            username = self.entry_username.get().strip()
+            password = self.entry_password.get().strip()
+
+        # LOGIC XÁC THỰC CỨNG THEO YÊU CẦU
+            if username == "admin" and password == "123":
+            
+            # 1. ĐÓNG CỬA SỔ LOGIN (Toplevel B)
+                login_window_to_close = self.master
+                login_window_to_close.destroy() 
+            
+            # 2. KHỞI TẠO CỬA SỔ CHÍNH MỚI (Toplevel C)
+            # Cửa sổ cha của Login là root (đã ẩn)
+                root = login_window_to_close.master 
+             
+            # 3. Khởi tạo MainApp, truyền đối tượng DB_Manager đã kết nối
+                self.MainAppClass(master=root, db_manager=self.db_manager) 
+            
+            else:
+                messagebox.showerror("Đăng nhập thất bại", "Tên người dùng hoặc Mật khẩu không hợp lệ.")
+                self.entry_password.delete(0, tk.END) # Xóa mật khẩu khỏi Entry
 
