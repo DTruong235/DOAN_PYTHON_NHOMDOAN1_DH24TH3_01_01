@@ -75,10 +75,15 @@ class DB_Manager:
         sql = "SELECT MASV, TEN, NAM, KHOA FROM SVIEN ORDER BY MASV"
         try:
             self.cursor.execute(sql)
-            # Lấy tên cột (ví dụ sử dụng trong main_app.py)
-            columns = [column for column in self.cursor.description]
-            # Lấy tất cả hàng dữ liệu
-            rows = self.cursor.fetchall()
+            # Lấy tên cột
+            columns = [desc[0] for desc in self.cursor.description]
+
+            # Lấy tất cả hàng và làm phẳng tuple (nếu có tuple lồng)
+            rows = [
+                tuple(item[0] if isinstance(item, tuple) else item for item in row)
+                for row in self.cursor.fetchall()
+            ]
+
             return columns, rows
         except Exception as e:
             messagebox.showerror("Lỗi Truy Vấn", f"Không thể tải dữ liệu sinh viên.\nLỗi: {e}")
