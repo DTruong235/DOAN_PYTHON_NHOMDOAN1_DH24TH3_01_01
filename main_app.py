@@ -252,9 +252,10 @@ class MainApp(tk.Toplevel):
 
         # Lấy giá trị của hàng được chọn (values là MASV)
         masv_to_delete = self.tree.item(selected_item, 'values')
+        masv = masv_to_delete[0]
 
         if messagebox.askyesno("Xác nhận Xóa", f"Bạn có chắc chắn muốn xóa sinh viên {masv_to_delete}?"):
-            if self.db_manager.delete_student(masv_to_delete):
+            if self.db_manager.delete_student(masv):
                 messagebox.showinfo("Thành công", f"Đã xóa sinh viên {masv_to_delete}.")
                 self.load_students() # Cập nhật Treeview
                 

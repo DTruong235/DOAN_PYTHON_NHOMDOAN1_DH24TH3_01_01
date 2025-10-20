@@ -29,6 +29,7 @@ def main():
 
     # 2. KHỞI CHẠY ỨNG DỤNG BẰNG CỬA SỔ ĐĂNG NHẬP
     login_window = tk.Toplevel(root)
+    
     # Truyền db_manager và MainApp Class vào LoginView.
     # LoginView sẽ dùng chúng để mở cửa sổ chính sau khi xác thực cứng thành công.
     LoginView(master=login_window, db_manager=db_manager, main_app_class=MainApp)

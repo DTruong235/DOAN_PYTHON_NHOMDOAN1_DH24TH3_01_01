@@ -92,7 +92,7 @@ class DB_Manager:
     # --- CREATE (Thêm dữ liệu) ---
     def add_student(self, masv, ten, gioitinh,ngaysinh, diachi ,khoahoc, khoa, email):
         """Thêm sinh viên mới (sử dụng tham số hóa)."""
-        sql_insert = "INSERT INTO SVIEN (MASV, TEN, GIOITINH, NGAYSINH, DIACHI, KHOAHOC, KHOA, EMAIL) VALUES (?,?,?,?)"
+        sql_insert = "INSERT INTO SVIEN (MASV, TEN, GIOITINH, NGAYSINH, DIACHI, KHOAHOC, KHOA, EMAIL) VALUES (?,?,?,?,?,?,?,?)"
         data_to_insert = (masv, ten, gioitinh, ngaysinh, diachi ,khoahoc, khoa, email)
         
         try:
@@ -114,7 +114,7 @@ class DB_Manager:
         sql_delete = "DELETE FROM SVIEN WHERE MASV =?"
         
         try:
-            self.cursor.execute(sql_delete, masv)
+            self.cursor.execute(sql_delete, (masv))
             self.conn.commit()
             # Kiểm tra xem có hàng nào bị xóa không
             if self.cursor.rowcount > 0:
