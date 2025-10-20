@@ -21,17 +21,6 @@ class MainApp(tk.Toplevel):
         style = ttk.Style()
         style.theme_use('clam')
 
-        #ĐẶT MÀU NỀN CỦA TAB (khi chưa được chọn)
-        style.configure('TNotebook.Tab', background='#D0D0D0', foreground='black') 
-
-        #ĐẶT MÀU NỀN CHO KHU VỰC NOTEBOOK (Màu nền chung)
-        style.configure('TNotebook', background="#2F7AEA")
-
-        # Tab sẽ có màu trắng khi nó ở trạng thái 'selected'
-        style.map('TNotebook.Tab', 
-                       background=[('selected', '#FFFFFF'),  # Khi trạng thái là 'selected', dùng màu trắng
-                                   ('active', 'lightgray')], # Khi chuột di chuyển qua (active), dùng màu xám nhạt
-                       foreground=[('selected', 'black')])
 
         self.label_Title = ttk.Label(self, text="PHẦN MỀM QUẢN LÝ SINH VIÊN")
         self.label_Title.pack(side='top',padx=5,pady=20, anchor="center")
@@ -46,25 +35,6 @@ class MainApp(tk.Toplevel):
             self.db_manager.disconnect()
             self.master.destroy() # Hủy cửa sổ gốc (nếu có)
             self.destroy()
-
-    def _configure_tab_colors(self):
-    #Cấu hình màu nền cho các Tab trong Notebook
-    
-    # Màu nền chung của khu vực Notebook (nằm ngoài các tab mục)
-        self.style.configure('TNotebook', background='#EFEFEF') 
-    
-    #  Cấu hình màu nền mặc định cho Tab (khi chưa được chọn)
-        self.style.configure('TNotebook.Tab', 
-                         background='#D0D0D0', # Màu xám nhạt cho tab không hoạt động
-                         foreground='black') 
-
-    #  Sử dụng map() để thay đổi màu khi Tab được chọn (Selected)
-        self.style.map('TNotebook.Tab', 
-                   # Quy tắc 1: Khi trạng thái là 'selected', màu nền là Trắng (#FFFFFF)
-                   background=[('selected', '#FFFFFF')], 
-                   
-                   # Quy tắc 2: Đảm bảo văn bản trên tab được chọn có màu đen
-                   foreground=[('selected', 'black')])
 
     
     def _setup_tabs(self):
@@ -88,22 +58,26 @@ class MainApp(tk.Toplevel):
 
     def _setup_layout_sinhvien(self,parent):
         style = ttk.Style()
-        style.configure('Custom.TFrame',background="#9CE6FB")
+        style.configure('Custom.TFrame',background="#D1D3D4")
 
         self.input_frame = ttk.LabelFrame(parent, text="Thông Tin Sinh Viên",style='Custom.TFrame') 
         self.input_frame.pack(padx=10, pady=10, fill="x")
 
+        #Frame cho thanh tìm kiếm
+        self.search_bar_frame = ttk.Frame(parent)
+        self.search_bar_frame.pack(padx=100, pady=5, fill="x")
+
         #Frame cho bảng Treeview
         tree_frame = ttk.Frame(parent)
-        # Đây là lệnh pack đúng để Treeview chiếm toàn bộ không gian còn lại
+        
         tree_frame.pack(padx=5, pady=10, fill="both", expand=True)
         self.tree_frame = tree_frame
 
         
-        # Lệnh gọi hàm phải được đặt ở đây để các Frame self.input_frame và self.tree_frame tồn tại
         self._setup_input_fields()
         self._setup_student_treeview()
         self.load_students()
+        
         
     def _setup_input_fields(self):
         """Tạo các nhãn và ô nhập liệu."""
@@ -112,43 +86,81 @@ class MainApp(tk.Toplevel):
         # 1. Khởi tạo dictionary để lưu trữ Entry widgets
         self.entries = {}
         
-        # --- HÀNG 0: MSSV ---
-        ttk.Label(input_frame, text="MSSV", font=("Arial", 12, 'bold')).grid(row=0, column=0, padx=5, pady=5, sticky="w")
+        # ---MSSV ---
+        ttk.Label(input_frame, text="MSSV", font=("Arial", 12, 'bold')).grid(row=1, column=0, padx=5, pady=5, sticky="w")
         entry_masv = ttk.Entry(input_frame, width=15)
-        entry_masv.grid(row=0, column=1, padx=5, pady=5, sticky="w")
+        entry_masv.grid(row=1, column=1, padx=5, pady=5, sticky="w")
         self.entries['masv'] = entry_masv # 🔑 LƯU TRỮ
 
-        # --- HÀNG 1: HỌ VÀ TÊN ---
-        ttk.Label(input_frame, text="Họ và tên", font=("Arial", 12, 'bold')).grid(row=1, column=0, padx=5, pady=5, sticky="w")
+        # --- HỌ VÀ TÊN ---
+        ttk.Label(input_frame, text="Họ và tên", font=("Arial", 12, 'bold')).grid(row=2, column=0, padx=5, pady=5, sticky="w")
         entry_ten = ttk.Entry(input_frame, width=30)
-        entry_ten.grid(row=1, column=1, padx=5, pady=5, sticky="w")
+        entry_ten.grid(row=2, column=1, padx=5, pady=5, sticky="w")
         self.entries['ten'] = entry_ten # 🔑 LƯU TRỮ
 
-        # --- HÀNG 2 (Cột 0, 1): NĂM ---
-        ttk.Label(input_frame, text="Năm", font=("Arial", 12, 'bold')).grid(row=2, column=0, padx=5, pady=5, sticky="w")
-        entry_nam = ttk.Entry(input_frame, width=8)
-        entry_nam.grid(row=2, column=1, padx=5, pady=5, sticky="w")
-        self.entries['nam'] = entry_nam # 🔑 LƯU TRỮ
+        # --- GIỚI TÍNH ---
+        style = ttk.Style()
+        style.configure('Custom.TRadiobutton',font=("Arial", 10, 'bold'))
+        rad_gt = tk.StringVar(value="Nam")
+        ttk.Label(input_frame, text="Giới tính", font=("Arial", 12, 'bold')).grid(row=3, column=0, padx=5, pady=5, sticky="w")
+        rad_gtnam = ttk.Radiobutton(input_frame, text="Nam", value="Nam",variable=rad_gt,style='Custom.TRadiobutton')
+        rad_gtnam.grid(row=3, column=1, padx=5, pady=5, sticky="w")
 
-        # --- HÀNG 2 (Cột 2, 3): KHOA ---
+        rad_gtnu = ttk.Radiobutton(input_frame, text="Nữ", value="Nu",variable=rad_gt,style='Custom.TRadiobutton')
+        rad_gtnu.grid(row=3, column=1, padx=100, pady=5, sticky="w")
+
+        self.entries['gioitinh'] = rad_gt # 🔑 LƯU TRỮ
+
+         # --- NGÀY SINH ---
+        ttk.Label(input_frame, text="Ngày sinh", font=("Arial", 12, 'bold')).grid(row=4, column=0, padx=5, pady=5, sticky="w")
+        entry_ngaysinh = ttk.Entry(input_frame, width=30)
+        entry_ngaysinh.grid(row=4, column=1, padx=5, pady=5, sticky="w")
+        self.entries['ngaysinh'] = entry_ngaysinh # 🔑 LƯU TRỮ
+
+        # --- ĐỊA CHỈ ---
+        ttk.Label(input_frame, text="Địa chỉ", font=("Arial", 12, 'bold')).grid(row=1, column=2, padx=5, pady=5, sticky="w")
+        entry_diachi = ttk.Entry(input_frame, width=30)
+        entry_diachi.grid(row=1, column=3, padx=5, pady=5, sticky="w")
+        self.entries['diachi'] = entry_diachi # 🔑 LƯU TRỮ
+
+        # --- KHÓA HỌC ---
+        ttk.Label(input_frame, text="Khóa học", font=("Arial", 12, 'bold')).grid(row=2, column=2, padx=5, pady=5, sticky="w")
+        entry_khoahoc = ttk.Entry(input_frame, width=8)
+        entry_khoahoc.grid(row=2, column=3, padx=5, pady=5, sticky="w")
+        self.entries['khoahoc'] = entry_khoahoc # 🔑 LƯU TRỮ
+
+        # --- KHOA ---
         # Đã chuyển nhãn Khoa sang cột 2 để tránh bị đè lên ô nhập Năm.
-        ttk.Label(input_frame, text="Khoa", font=("Arial", 12, 'bold')).grid(row=2, column=2, padx=10, pady=5, sticky="w") 
+        ttk.Label(input_frame, text="Khoa", font=("Arial", 12, 'bold')).grid(row=3, column=2, padx=5, pady=5, sticky="w") 
         entry_khoa = ttk.Entry(input_frame, width=15)
-        entry_khoa.grid(row=2, column=3, padx=5, pady=5, sticky="w")
+        entry_khoa.grid(row=3, column=3, padx=5, pady=5, sticky="w")
         self.entries['khoa'] = entry_khoa # 🔑 LƯU TRỮ
 
-        ttk.Button(input_frame, text="Thêm SV", command=self.handle_add_student).grid(row=3, column=0, padx=10, pady=5, sticky="w") 
-        ttk.Button(input_frame, text="Xóa SV", command=self.handle_delete_student).grid(row=3, column=1, padx=10, pady=5, sticky="w")
-        ttk.Button(input_frame, text="Làm Mới", command=self.load_students).grid(row=3, column=2, padx=10, pady=5, sticky="w")
+         # --- EMAIL ---
+        ttk.Label(input_frame, text="Email", font=("Arial", 12, 'bold')).grid(row=4, column=2, padx=5, pady=5, sticky="w")
+        entry_email = ttk.Entry(input_frame, width=30)
+        entry_email.grid(row=4, column=3, padx=5, pady=5, sticky="w")
+        self.entries['email'] = entry_email # 🔑 LƯU TRỮ
+
+        ttk.Button(input_frame, text="Thêm SV", command=self.handle_add_student).grid(row=1, column=5, padx=10, pady=5, sticky="w") 
+        ttk.Button(input_frame, text="Xóa SV", command=self.handle_delete_student).grid(row=2, column=5, padx=10, pady=5, sticky="w")
+        ttk.Button(input_frame, text="Làm Mới", command=self.load_students).grid(row=3, column=5, padx=10, pady=5, sticky="w")
 
         # Đảm bảo các cột trống phía sau mở rộng (chú ý cột cuối cùng là cột 4)
         input_frame.grid_columnconfigure(4, weight=1)
 
+        search_frame = self.search_bar_frame # Container là Frame tìm kiếm mới
+        ttk.Label(search_frame, text="Tìm kiếm Mã SV:", font=("Arial", 12, "bold","italic")).pack(side="left", padx=5)
+        entry_search_masv = ttk.Entry(search_frame, width=30)
+        entry_search_masv.pack(side="left", padx=5, fill="x", expand=True)
+        self.entries['search_masv'] = entry_search_masv
+
+        ttk.Button(search_frame, text="Tìm", command=self.handle_search_and_load).pack(side="left", padx=10)
         
 
     def _setup_student_treeview(self):
         """Thiết lập widget hiển thị bảng dữ liệu (Treeview)."""
-        columns = ("MASV", "TEN", "NAM", "KHOA")
+        columns = ("MASV", "TEN", "GIOITINH","NGAYSINH","DIACHI","KHOAHOC", "KHOA","EMAIL")
 
         self.tree = ttk.Treeview(self.tree_frame, columns=columns, show='headings')
 
@@ -158,14 +170,22 @@ class MainApp(tk.Toplevel):
         # Thiết lập tiêu đề cột
         self.tree.heading("MASV", text="Mã SV")
         self.tree.heading("TEN", text="Họ Tên")
-        self.tree.heading("NAM", text="Năm")
+        self.tree.heading("GIOITINH", text="Giới tính")
+        self.tree.heading("NGAYSINH", text="Ngày sinh")
+        self.tree.heading("DIACHI", text="Địa chỉ")
+        self.tree.heading("KHOAHOC", text="Khóa học")
         self.tree.heading("KHOA", text="Khoa")
+        self.tree.heading("EMAIL", text="Email")
 
         # Thiết lập chiều rộng cột (tùy chọn)
         self.tree.column("MASV", width=40, anchor=tk.CENTER)
         self.tree.column("TEN", width=150, anchor=tk.W)
-        self.tree.column("NAM", width=50, anchor=tk.CENTER)
+        self.tree.column("GIOITINH", width=50, anchor=tk.CENTER)
+        self.tree.column("NGAYSINH", width=100, anchor=tk.W)
+        self.tree.column("DIACHI", width=150, anchor=tk.W)
+        self.tree.column("KHOAHOC", width=50, anchor=tk.CENTER)
         self.tree.column("KHOA", width=100, anchor=tk.CENTER)
+        self.tree.column("EMAIL", width=150, anchor=tk.W)
         
         # Thêm Scrollbar
         scrollbar = ttk.Scrollbar(self.tree_frame, orient="vertical", command=self.tree.yview)
@@ -192,29 +212,33 @@ class MainApp(tk.Toplevel):
     def handle_add_student(self):
         """Thu thập dữ liệu và gọi hàm thêm sinh viên."""
         try:
-            # ✅ SỬA LỖI CÚ PHÁP: Truy cập bằng khóa dictionary (ví dụ: self.entries['masv'])
+            
             masv = self.entries['masv'].get().strip().upper()
             ten = self.entries['ten'].get().strip()
-            nam_str = self.entries['nam'].get().strip()
+            gioitinh = self.entries['gioitinh'].get().strip()
+            ngaysinh = self.entries['ngaysinh'].get().strip()
+            diachi = self.entries['diachi'].get().strip()
+            khoahoc_str = self.entries['khoahoc'].get().strip()
             khoa = self.entries['khoa'].get().strip()
+            email = self.entries['email'].get().strip()
         except KeyError as e:
             # Bắt lỗi nếu các Entry fields chưa được tạo hoặc được truy cập sai
             messagebox.showerror("Lỗi Cấu hình", f"Lỗi truy cập Entry field {e}. Vui lòng kiểm tra lại tên khóa.")
             return
             
         # Kiểm tra dữ liệu đầu vào cơ bản
-        if not masv or not ten or not nam_str:
+        if not masv or not ten or not khoahoc_str:
              messagebox.showwarning("Thiếu thông tin", "Vui lòng điền đủ Mã SV, Họ Tên và Năm Sinh.")
              return
 
         try:
-            nam = int(nam_str)
+            khoahoc = int(khoahoc_str)
         except ValueError:
-            messagebox.showwarning("Lỗi dữ liệu", "Năm Sinh phải là số nguyên.")
+            messagebox.showwarning("Lỗi dữ liệu", "Khóa học phải là số nguyên.")
             return
 
         # Gọi hàm thêm từ DB_Manager
-        if self.db_manager.add_student(masv, ten, nam, khoa):
+        if self.db_manager.add_student(masv,ten,gioitinh,ngaysinh,diachi,khoahoc,khoa,email):
             messagebox.showinfo("Thành công", f"Đã thêm sinh viên {ten} ({masv}).")
             self.load_students() # Cập nhật Treeview
             self._clear_entries()
@@ -238,3 +262,45 @@ class MainApp(tk.Toplevel):
         """Xóa nội dung trong các ô nhập liệu."""
         for entry in self.entries.values():
             entry.delete(0, tk.END)
+
+    def handle_search_and_load(self):
+        try:
+            # 1. Thu thập đầu vào
+            # Sử dụng khóa 'search_masv' như đã thiết lập trong _setup_input_fields
+            search_keyword = self.entries['search_masv'].get().strip()
+
+            # 2. Gọi Model để tìm kiếm
+            # Hàm find_student() sẽ trả về tất cả sinh viên nếu search_keyword trống.
+            # (Hàm find_student() phải được sửa lỗi cú pháp SQL và trả về: columns, students)
+            
+            # Khởi tạo students là rỗng để tránh lỗi nếu Model gặp sự cố
+            columns, students = None,[] 
+            
+            # Gọi Model (DB_Manager)
+            results = self.db_manager.find_student(search_keyword)
+
+            if results and len(results) == 2:
+                columns, students = results
+            
+            # 3. Cập nhật View (Treeview)
+            
+            # Xóa dữ liệu cũ khỏi Treeview
+            for item in self.tree.get_children():
+                self.tree.delete(item)
+
+            if not students:
+                # Nếu không tìm thấy và ô tìm kiếm không trống
+                if search_keyword:
+                    messagebox.showinfo("Tìm kiếm", f"Không tìm thấy sinh viên nào khớp với '{search_keyword}'.")
+                
+                # Sau khi thông báo, nếu không tìm thấy gì, Treeview sẽ trống
+                return
+
+            # Chèn dữ liệu mới vào Treeview
+            for student in students:
+                # Mỗi 'student' là một tuple dữ liệu hàng (MASV, TEN, GIOITINH,...)
+                self.tree.insert("", tk.END, values=student)
+                
+        except Exception as e:
+            # Xử lý lỗi hệ thống hoặc lỗi khác (không phải lỗi DB đã được xử lý)
+            messagebox.showerror("Lỗi Truy vấn Hệ thống", f"Đã xảy ra lỗi khi thực hiện tìm kiếm:\n{e}")

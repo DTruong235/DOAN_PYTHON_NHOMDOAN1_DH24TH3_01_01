@@ -72,7 +72,7 @@ class DB_Manager:
     # --- READ (Đọc dữ liệu) ---
     def fetch_all_students(self):
         """Lấy tất cả sinh viên từ bảng SVIEN."""
-        sql = "SELECT MASV, TEN, NAM, KHOA FROM SVIEN ORDER BY MASV"
+        sql = "SELECT * FROM SVIEN ORDER BY MASV"
         try:
             self.cursor.execute(sql)
             # Lấy tên cột
@@ -90,10 +90,10 @@ class DB_Manager:
             return
 
     # --- CREATE (Thêm dữ liệu) ---
-    def add_student(self, masv, ten, nam, khoa):
+    def add_student(self, masv, ten, gioitinh,ngaysinh, diachi ,khoahoc, khoa, email):
         """Thêm sinh viên mới (sử dụng tham số hóa)."""
-        sql_insert = "INSERT INTO SVIEN (MASV, TEN, NAM, KHOA) VALUES (?,?,?,?)"
-        data_to_insert = (masv, ten, nam, khoa)
+        sql_insert = "INSERT INTO SVIEN (MASV, TEN, GIOITINH, NGAYSINH, DIACHI, KHOAHOC, KHOA, EMAIL) VALUES (?,?,?,?)"
+        data_to_insert = (masv, ten, gioitinh, ngaysinh, diachi ,khoahoc, khoa, email)
         
         try:
             self.cursor.execute(sql_insert, data_to_insert)
@@ -133,3 +133,36 @@ class DB_Manager:
             return False
 
     # Các hàm UPDATE, Tìm kiếm, và CRUD cho các bảng khác (MHOC, KETQUA) sẽ được thêm sau.
+    # --- HÀM TÌM SINH VIÊN THEO MSV ---
+    def find_student(self,masv):
+        if not masv:
+            # Nếu từ khóa trống, trả về tất cả sinh viên
+            return self.fetch_all_students()
+        
+        # Chuẩn hóa từ khóa để tìm kiếm không phân biệt chữ hoa/thường và khớp một phần
+        search_term = f"%{masv}%"
+
+        sql_find = "SELECT * FROM SVIEN WHERE MASV LIKE ?"
+
+        params = (search_term,) # Tuple tham số
+
+        try:
+            # Thực thi câu lệnh SQL
+            self.cursor.execute(sql_find, params)
+            
+            # Lấy tên cột
+            columns = [desc[0] for desc in self.cursor.description]
+
+            
+            # Lấy tất cả hàng dữ liệu khớp
+            rows = [
+                tuple(item[0] if isinstance(item, tuple) else item for item in row)
+                for row in self.cursor.fetchall()
+            ]
+            
+            return columns, rows
+            
+        except Exception as e:
+            # Xử lý lỗi DB mà không làm sập ứng dụng
+            print(f"Lỗi truy vấn tìm kiếm theo MASV: {e}")
+            return None,[] # Trả về list rỗng
