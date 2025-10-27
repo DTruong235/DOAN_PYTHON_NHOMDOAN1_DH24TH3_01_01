@@ -1,43 +1,60 @@
-# main.py (Đã sửa)
+# main.py (Đã nâng cấp lên CustomTkinter)
 
-import tkinter as tk
+import customtkinter as ctk
 from db_manager import DB_Manager
 from main_app import MainApp
-from login_view import LoginView # Đảm bảo tên file là login_view
-import tkinter.messagebox as messagebox
-import sys # Import sys
+from login_view import LoginView 
+import sys 
 
 # --- THÔNG SỐ KẾT NỐI DATABASE ---
-# Cần giữ lại để MainApp có thể truy cập sinh viên
 SERVER_NAME = r'LAPTOP-O68GMDB5' 
 DATABASE_NAME = 'QLSV'
 SQL_USER = 'sa'
 SQL_PASSWORD = '123' 
 
+# --- MÃ MÀU TÙY CHỈNH (TỪ ẢNH) ---
+# Dùng cho LoginView
+COLOR_DARK_BLUE = "#0f1e3f"
+COLOR_LIGHT_GOLD = "#cdaa80"
+COLOR_DARK_GOLD = "#997953"
+COLOR_WHITE = "#FFFFFF"
 
 def main():
-    root = tk.Tk()
-    root.withdraw() # Ẩn cửa sổ gốc mặc định của Tkinter
     
-    # 1. Khởi tạo DB Manager và Kết nối
+    # 1. CÀI ĐẶT THEME CHUNG
+    # MainApp nền trắng, nên ta đặt theme chung là "light"
+    ctk.set_appearance_mode("light") 
+    ctk.set_default_color_theme("blue")
+
+    # 2. KHỞI TẠO CỬA SỔ GỐC
+    root = ctk.CTk() # Dùng CTk() thay vì tk.Tk()
+    root.withdraw() # Ẩn cửa sổ gốc
+    
+    # 3. Khởi tạo DB Manager
     db_manager = DB_Manager(SERVER_NAME, DATABASE_NAME, SQL_USER, SQL_PASSWORD)
-
     if not db_manager.connect():
-        # Nếu kết nối thất bại, thoát ứng dụng
         root.destroy()
-        sys.exit() # Dùng sys.exit() để thoát triệt để
+        sys.exit() 
 
-    # 2. KHỞI CHẠY ỨNG DỤNG BẰNG CỬA SỔ ĐĂNG NHẬP
-    login_window = tk.Toplevel(root)
+    # 4. Khởi chạy LoginView
+    # Dùng CTkToplevel thay vì tk.Toplevel
+    login_window = ctk.CTkToplevel(root)
     
-    # Truyền db_manager và MainApp Class vào LoginView.
-    # LoginView sẽ dùng chúng để mở cửa sổ chính sau khi xác thực cứng thành công.
-    LoginView(master=login_window, db_manager=db_manager, main_app_class=MainApp)
+    # Truyền các mã màu tùy chỉnh vào LoginView
+    LoginView(
+        master=login_window, 
+        db_manager=db_manager, 
+        main_app_class=MainApp,
+        colors={
+            "dark_blue": COLOR_DARK_BLUE,
+            "light_gold": COLOR_LIGHT_GOLD,
+            "dark_gold": COLOR_DARK_GOLD,
+            "white": COLOR_WHITE
+        }
+    )
     
-    # 3. Chạy vòng lặp chính của ứng dụng
     root.mainloop()
     
-    # Đảm bảo đóng kết nối khi ứng dụng chính kết thúc
     db_manager.disconnect()
 
 if __name__ == "__main__":

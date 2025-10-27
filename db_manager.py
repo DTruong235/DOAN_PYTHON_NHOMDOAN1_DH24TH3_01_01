@@ -72,7 +72,13 @@ class DB_Manager:
     # --- READ (Đọc dữ liệu) ---
     def fetch_all_students(self):
         """Lấy tất cả sinh viên từ bảng SVIEN."""
-        sql = "SELECT * FROM SVIEN ORDER BY MASV"
+        sql = """
+            SELECT MASV, TEN, GIOITINH, 
+                   CONVERT(varchar, NGAYSINH, 103) AS NGAYSINH_FORMATTED, 
+                   DIACHI, KHOAHOC, KHOA, EMAIL 
+            FROM SVIEN 
+            ORDER BY MASV
+            """
         try:
             self.cursor.execute(sql)
             # Lấy tên cột
@@ -99,9 +105,25 @@ class DB_Manager:
             self.cursor.execute(sql_insert, data_to_insert)
             self.conn.commit()
             return True
-        except pyodbc.IntegrityError:
-            # Lỗi trùng lặp Khóa Chính MASV (IntegrityError) [3]
-            messagebox.showwarning("Lỗi Dữ Liệu", "Mã sinh viên (MASV) này đã tồn tại trong hệ thống.")
+        except pyodbc.IntegrityError as e:
+            # In lỗi chi tiết ra cửa sổ terminal/console của bạn
+            print("--- LỖI DATABASE CHI TIẾT ---")
+            print(e)
+            print("-----------------------------")
+
+            # Phân tích lỗi để hiển thị thông báo chính xác hơn
+            error_message = str(e)
+            
+            if "PRIMARY KEY" in error_message:
+                messagebox.showwarning("Lỗi Dữ Liệu", "Mã sinh viên (MASV) này đã tồn tại trong hệ thống.")
+            elif "UNIQUE constraint" in error_message:
+                messagebox.showwarning("Lỗi Dữ Liệu", "Lỗi trùng lặp: Email, SĐT hoặc một trường duy nhất nào đó đã tồn tại.")
+            elif "FOREIGN KEY" in error_message:
+                messagebox.showwarning("Lỗi Dữ Liệu", "Lỗi khóa ngoại: Khoa hoặc một trường tham chiếu không tồn tại.")
+            else:
+                messagebox.showwarning("Lỗi Dữ Liệu", "Lỗi định dạng Mã sinh viên (MSV): MSV phải theo định dạng [a-z][0-9][0-9][0-9]")
+            
+            self.conn.rollback() 
             return False
         except Exception as e:
             messagebox.showerror("Lỗi Thêm Mới", f"Có lỗi xảy ra khi thêm sinh viên: {e}")
@@ -166,3 +188,159 @@ class DB_Manager:
             # Xử lý lỗi DB mà không làm sập ứng dụng
             print(f"Lỗi truy vấn tìm kiếm theo MASV: {e}")
             return None,[] # Trả về list rỗng
+        
+    # --- UPDATE (Cập nhật dữ liệu) ---
+    def update_student(self, masv, ten, gioitinh, ngaysinh, diachi, khoahoc, khoa, email):
+        """Cập nhật thông tin sinh viên (sử dụng tham số hóa)."""
+        
+        # Câu lệnh SQL UPDATE
+        sql_update = """
+            UPDATE SVIEN 
+            SET TEN = ?, GIOITINH = ?, NGAYSINH = ?, DIACHI = ?, 
+                KHOAHOC = ?, KHOA = ?, EMAIL = ?
+            WHERE MASV = ?
+        """
+        
+        # MASV (khóa chính) nằm ở cuối cùng cho mệnh đề WHERE
+        data_to_update = (ten, gioitinh, ngaysinh, diachi, khoahoc, khoa, email, masv)
+        
+        try:
+            self.cursor.execute(sql_update, data_to_update)
+            self.conn.commit()
+            
+            # Kiểm tra xem có hàng nào thực sự được cập nhật không
+            if self.cursor.rowcount > 0:
+                return True
+            else:
+                # Trường hợp người dùng nhấn "Sửa" nhưng không thay đổi gì
+                # Hoặc MASV không tồn tại (dù trường hợp này khó xảy ra nếu làm đúng)
+                messagebox.showwarning("Không Cập Nhật", "Không tìm thấy sinh viên hoặc không có thông tin nào thay đổi.")
+                return False
+        except Exception as e:
+            messagebox.showerror("Lỗi Cập Nhật", f"Có lỗi xảy ra khi cập nhật sinh viên: {e}")
+            self.conn.rollback()
+            return False
+        
+    def fetch_all_subjects(self):
+        """Lấy tất cả môn học từ bảng MHOC."""
+        sql = "SELECT MAMH, TEN_MH, SOTINCHI, KHOA FROM MHOC ORDER BY MAMH" # Lấy đủ cột
+        try:
+            self.cursor.execute(sql)
+            columns = [desc[0] for desc in self.cursor.description]
+            rows = self.cursor.fetchall() # fetchall trả về list các tuple
+            return columns, rows
+        except Exception as e:
+            messagebox.showerror("Lỗi Truy Vấn Môn Học", f"Không thể tải dữ liệu môn học.\nLỗi: {e}")
+            return [], []
+    
+    # --- CREATE (Thêm Môn Học) ---
+    def add_subject(self, mamh, ten_mh, sotinchi, khoa='CNTT'): # Khoa có giá trị mặc định
+        """Thêm môn học mới (dùng tham số hóa)."""
+        sql_insert = "INSERT INTO MHOC (MAMH, TEN_MH, SOTINCHI, KHOA) VALUES (?, ?, ?, ?)"
+        # Đảm bảo mamh là chữ thường để khớp CHECK constraint
+        data_to_insert = (mamh.lower(), ten_mh, sotinchi, khoa)
+        try:
+            self.cursor.execute(sql_insert, data_to_insert)
+            self.conn.commit()
+            return True
+        except pyodbc.IntegrityError as e:
+            error_message = str(e)
+            print(f"LỖI DB (Add Subject): {error_message}") # In lỗi chi tiết
+            if "PRIMARY KEY" in error_message:
+                messagebox.showwarning("Lỗi Dữ Liệu", f"Mã môn học '{mamh}' đã tồn tại.")
+            elif "CHECK constraint" in error_message:
+                 if "SOTINCHI" in error_message:
+                     messagebox.showwarning("Lỗi Dữ Liệu", "Số tín chỉ phải từ 1 đến 10.")
+                 elif "MAMH" in error_message:
+                     messagebox.showwarning("Lỗi Dữ Liệu", "Mã môn học phải theo định dạng 'aaa###' (vd: dsg101).")
+                 else:
+                     messagebox.showwarning("Lỗi Dữ Liệu", f"Dữ liệu vi phạm ràng buộc CHECK: {e}")
+            else:
+                 messagebox.showwarning("Lỗi Toàn Vẹn", f"Lỗi toàn vẹn không xác định: {e}")
+            self.conn.rollback()
+            return False
+        except Exception as e:
+            messagebox.showerror("Lỗi Thêm Môn Học", f"Có lỗi xảy ra khi thêm môn học: {e}")
+            self.conn.rollback()
+            return False
+
+    # --- UPDATE (Sửa Môn Học) ---
+    def update_subject(self, mamh, ten_mh, sotinchi, khoa='CNTT'):
+        """Cập nhật thông tin môn học (dùng tham số hóa)."""
+        sql_update = """
+            UPDATE MHOC
+            SET TEN_MH = ?, SOTINCHI = ?, KHOA = ?
+            WHERE MAMH = ?
+        """
+        # mamh trong WHERE clause không cần lower() nếu dữ liệu gốc đã đúng
+        data_to_update = (ten_mh, sotinchi, khoa, mamh)
+        try:
+            self.cursor.execute(sql_update, data_to_update)
+            self.conn.commit()
+            if self.cursor.rowcount > 0:
+                return True
+            else:
+                # Có thể không tìm thấy mamh hoặc không có gì thay đổi
+                messagebox.showwarning("Không Cập Nhật", f"Không tìm thấy mã môn học '{mamh}' để cập nhật hoặc không có thông tin nào thay đổi.")
+                return False
+        except pyodbc.IntegrityError as e: # Bắt lỗi CHECK khi cập nhật
+            error_message = str(e)
+            print(f"LỖI DB (Update Subject): {error_message}") # In lỗi chi tiết
+            if "CHECK constraint" in error_message:
+                 if "SOTINCHI" in error_message:
+                     messagebox.showwarning("Lỗi Dữ Liệu", "Số tín chỉ phải từ 1 đến 10.")
+                 else:
+                     messagebox.showwarning("Lỗi Dữ Liệu", f"Dữ liệu vi phạm ràng buộc CHECK: {e}")
+            else:
+                 messagebox.showwarning("Lỗi Toàn Vẹn", f"Lỗi toàn vẹn không xác định: {e}")
+            self.conn.rollback()
+            return False
+        except Exception as e:
+            messagebox.showerror("Lỗi Cập Nhật Môn Học", f"Có lỗi xảy ra khi cập nhật môn học: {e}")
+            self.conn.rollback()
+            return False
+
+    # --- DELETE (Xóa Môn Học) ---
+    def delete_subject(self, mamh):
+        """Xóa môn học (dùng tham số hóa)."""
+        sql_delete = "DELETE FROM MHOC WHERE MAMH = ?"
+        try:
+            self.cursor.execute(sql_delete, (mamh,))
+            self.conn.commit()
+            if self.cursor.rowcount > 0:
+                return True
+            else:
+                # Không tìm thấy mamh để xóa
+                messagebox.showwarning("Không Tìm Thấy", f"Không tìm thấy mã môn học '{mamh}' để xóa.")
+                return False
+        except pyodbc.IntegrityError:
+            # Lỗi khóa ngoại (nếu MHOC được tham chiếu bởi bảng KETQUA chẳng hạn)
+            messagebox.showwarning("Lỗi Ràng Buộc", f"Không thể xóa môn học '{mamh}' vì có thể đang có dữ liệu điểm liên quan.")
+            self.conn.rollback()
+            return False
+        except Exception as e:
+            messagebox.showerror("Lỗi Xóa Môn Học", f"Có lỗi xảy ra khi xóa môn học: {e}")
+            self.conn.rollback()
+            return False
+        
+    # === HÀM TÌM KIẾM MÔN HỌC ===
+    def find_subject(self, search_keyword):
+        """Tìm kiếm môn học theo MAMH (LIKE)."""
+        # Nếu keyword rỗng, trả về tất cả
+        if not search_keyword:
+            return self.fetch_all_subjects()
+
+        # Tìm kiếm gần đúng (LIKE) và không phân biệt hoa thường
+        # Chuyển keyword sang chữ thường để khớp với CHECK constraint
+        search_term = f"%{search_keyword.lower()}%"
+        sql_find = "SELECT MAMH, TEN_MH, SOTINCHI, KHOA FROM MHOC WHERE LOWER(MAMH) LIKE ? ORDER BY MAMH"
+        params = (search_term,)
+
+        try:
+            self.cursor.execute(sql_find, params)
+            columns = [desc[0] for desc in self.cursor.description]
+            rows = self.cursor.fetchall()
+            return columns, rows
+        except Exception as e:
+            messagebox.showerror("Lỗi Tìm Môn Học", f"Có lỗi xảy ra khi tìm kiếm môn học:\n{e}")
+            return [], []
