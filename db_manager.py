@@ -69,6 +69,68 @@ class DB_Manager:
             self.conn = None
             self.cursor = None
 
+    def _execute_query(self, sql, params=None, fetch_mode="all"):
+        """Thực thi truy vấn và xử lý lỗi chung."""
+        if not self.conn or not self.cursor:
+            messagebox.showerror("Lỗi Kết Nối", "Chưa kết nối đến database.")
+            # Trả về giá trị mặc định phù hợp với fetch_mode
+            if fetch_mode in ["all", "one"]: return [], [] if fetch_mode == "all" else None
+            return None
+
+        try:
+            print(f"Executing SQL: {sql} with params: {params}") # In ra để debug
+            if params:
+                self.cursor.execute(sql, params)
+            else:
+                self.cursor.execute(sql)
+
+            if fetch_mode == "all":
+                # Lấy tên cột (có thể không cần nếu không dùng)
+                columns = [desc[0] for desc in self.cursor.description]
+                # Xử lý NULL thành chuỗi rỗng
+                rows = [tuple(str(item) if item is not None else "" for item in row) for row in self.cursor.fetchall()]
+                print(f"Fetched rows: {len(rows)}") # Debug số lượng dòng lấy được
+                return columns, rows
+            elif fetch_mode == "one":
+                result = self.cursor.fetchone()
+                # Xử lý NULL thành chuỗi rỗng cho fetchone
+                processed_result = tuple(str(item) if item is not None else "" for item in result) if result else None
+                return processed_result
+            elif fetch_mode == "commit":
+                # Chỉ commit và trả về số dòng bị ảnh hưởng
+                rowcount = self.cursor.rowcount
+                self.conn.commit()
+                print(f"Committed. Rows affected: {rowcount}") # Debug
+                return rowcount
+            elif fetch_mode == "no_fetch_commit":
+                # Chỉ commit, không cần rowcount (cho INSERT/MERGE)
+                self.conn.commit()
+                print("Committed (no fetch).") # Debug
+                return True
+            else: # fetch_mode == "none" hoặc không xác định
+                return None # Không fetch, không commit
+
+        except pyodbc.IntegrityError as e:
+            error_message = str(e)
+            print(f"LỖI DB (Integrity): {error_message}")
+            if self.conn: self.conn.rollback() # QUAN TRỌNG: Rollback
+            raise e # Ném lại lỗi để hàm gọi xử lý thông báo cụ thể
+        except pyodbc.Error as e:
+             error_message = str(e)
+             print(f"LỖI DB (pyodbc): {error_message}")
+             messagebox.showerror("Lỗi Database", f"Lỗi thực thi truy vấn:\n{error_message}")
+             if self.conn: self.conn.rollback()
+             # Trả về giá trị mặc định phù hợp với fetch_mode
+             if fetch_mode in ["all", "one"]: return [], [] if fetch_mode == "all" else None
+             return None
+        except Exception as e:
+            print(f"LỖI PYTHON (_execute_query): {e}")
+            messagebox.showerror("Lỗi Chương Trình", f"Lỗi không xác định khi thực thi truy vấn:\n{e}")
+            
+            # Trả về giá trị mặc định phù hợp với fetch_mode
+            if fetch_mode in ["all", "one"]: return [], [] if fetch_mode == "all" else None
+            return None
+
     # --- READ (Đọc dữ liệu) ---
     def fetch_all_students(self):
         """Lấy tất cả sinh viên từ bảng SVIEN."""
@@ -344,3 +406,195 @@ class DB_Manager:
         except Exception as e:
             messagebox.showerror("Lỗi Tìm Môn Học", f"Có lỗi xảy ra khi tìm kiếm môn học:\n{e}")
             return [], []
+        
+    def fetch_all_hocphan(self):
+        """Lấy tất cả học phần, JOIN với MHOC để lấy Tên Môn Học."""
+        sql = """
+            SELECT HP.MAHP, HP.MAMH, MH.TEN_MH, HP.HOCKY, HP.NAMHOC, HP.GV
+            FROM HOCPHAN HP
+            JOIN MHOC MH ON HP.MAMH = MH.MAMH
+            ORDER BY HP.MAHP
+        """
+        try:
+            self.cursor.execute(sql)
+            columns = [desc[0] for desc in self.cursor.description] # MAHP, MAMH, TEN_MH, HOCKY, NAMHOC, GV
+            rows = self.cursor.fetchall()
+            return columns, rows
+        except Exception as e:
+            messagebox.showerror("Lỗi Truy Vấn Học Phần", f"Không thể tải dữ liệu học phần.\nLỗi: {e}")
+            return [], []
+
+    def add_hocphan(self, mahp, mamh, hocky, namhoc, gv):
+        """Thêm học phần mới."""
+        sql_insert = "INSERT INTO HOCPHAN (MAHP, MAMH, HOCKY, NAMHOC, GV) VALUES (?, ?, ?, ?, ?)"
+        # Đảm bảo mamh chữ thường nếu cần khớp foreign key
+        data_to_insert = (mahp, mamh.lower(), hocky, namhoc, gv)
+        try:
+            self.cursor.execute(sql_insert, data_to_insert)
+            self.conn.commit()
+            return True
+        except pyodbc.IntegrityError as e:
+            error_message = str(e)
+            print(f"LỖI DB (Add HocPhan): {error_message}")
+            if "PRIMARY KEY" in error_message:
+                messagebox.showwarning("Lỗi Dữ Liệu", f"Mã học phần '{mahp}' đã tồn tại.")
+            elif "FOREIGN KEY constraint 'FK_HOCPHAN'" in error_message:
+                 messagebox.showwarning("Lỗi Dữ Liệu", f"Mã môn học '{mamh}' không tồn tại trong bảng Môn Học.")
+            elif "CHECK constraint" in error_message: # Bắt lỗi CHECK MAHP > 0
+                 messagebox.showwarning("Lỗi Dữ Liệu", "Mã học phần phải lớn hơn 0.")
+            else:
+                 messagebox.showwarning("Lỗi Toàn Vẹn", f"Lỗi toàn vẹn không xác định: {e}")
+            self.conn.rollback()
+            return False
+        except Exception as e:
+            messagebox.showerror("Lỗi Thêm Học Phần", f"Có lỗi xảy ra khi thêm học phần: {e}")
+            self.conn.rollback()
+            return False
+
+    def update_hocphan(self, mahp, mamh, hocky, namhoc, gv):
+        """Cập nhật thông tin học phần."""
+        sql_update = """
+            UPDATE HOCPHAN
+            SET MAMH = ?, HOCKY = ?, NAMHOC = ?, GV = ?
+            WHERE MAHP = ?
+        """
+        # Đảm bảo mamh chữ thường nếu cần khớp foreign key
+        data_to_update = (mamh.lower(), hocky, namhoc, gv, mahp)
+        try:
+            self.cursor.execute(sql_update, data_to_update)
+            self.conn.commit()
+            if self.cursor.rowcount > 0:
+                return True
+            else:
+                messagebox.showwarning("Không Cập Nhật", f"Không tìm thấy mã học phần '{mahp}' hoặc không có gì thay đổi.")
+                return False
+        except pyodbc.IntegrityError as e: # Bắt lỗi FK khi sửa MAMH
+            error_message = str(e)
+            print(f"LỖI DB (Update HocPhan): {error_message}")
+            if "FOREIGN KEY constraint 'FK_HOCPHAN'" in error_message:
+                 messagebox.showwarning("Lỗi Dữ Liệu", f"Mã môn học '{mamh}' không tồn tại trong bảng Môn Học.")
+            # CHECK constraint ít khả năng xảy ra khi update trừ khi sửa MAHP (đang bị cấm)
+            else:
+                 messagebox.showwarning("Lỗi Toàn Vẹn", f"Lỗi toàn vẹn không xác định: {e}")
+            self.conn.rollback()
+            return False
+        except Exception as e:
+            messagebox.showerror("Lỗi Cập Nhật Học Phần", f"Có lỗi xảy ra khi cập nhật học phần: {e}")
+            self.conn.rollback()
+            return False
+
+    def delete_hocphan(self, mahp):
+        """Xóa học phần."""
+        sql_delete = "DELETE FROM HOCPHAN WHERE MAHP = ?"
+        try:
+            self.cursor.execute(sql_delete, (mahp,))
+            self.conn.commit()
+            if self.cursor.rowcount > 0:
+                return True
+            else:
+                messagebox.showwarning("Không Tìm Thấy", f"Không tìm thấy mã học phần '{mahp}' để xóa.")
+                return False
+        except pyodbc.IntegrityError:
+            # Lỗi khóa ngoại (nếu HOCPHAN được tham chiếu bởi bảng KETQUA chẳng hạn)
+            messagebox.showwarning("Lỗi Ràng Buộc", f"Không thể xóa học phần '{mahp}' vì có thể đang có dữ liệu điểm hoặc đăng ký liên quan.")
+            self.conn.rollback()
+            return False
+        except Exception as e:
+            messagebox.showerror("Lỗi Xóa Học Phần", f"Có lỗi xảy ra khi xóa học phần: {e}")
+            self.conn.rollback()
+            return False
+
+    def find_hocphan(self, search_keyword):
+        """Tìm kiếm học phần theo MAHP (số) hoặc MAMH (chữ)."""
+        if not search_keyword:
+            return self.fetch_all_hocphan()
+
+        sql_find = """
+            SELECT HP.MAHP, HP.MAMH, MH.TEN_MH, HP.HOCKY, HP.NAMHOC, HP.GV
+            FROM HOCPHAN HP
+            JOIN MHOC MH ON HP.MAMH = MH.MAMH
+            WHERE CAST(HP.MAHP AS VARCHAR) LIKE ? OR LOWER(HP.MAMH) LIKE ? OR LOWER(MH.TEN_MH) LIKE ? OR LOWER(HP.GV) LIKE ?
+            ORDER BY HP.NAMHOC DESC, HP.HOCKY, HP.MAHP
+        """
+        search_term_like = f"%{search_keyword.lower()}%"
+        # Tuple tham số cho 4 vị trí LIKE
+        params = (search_term_like, search_term_like, search_term_like, search_term_like)
+
+        try:
+            self.cursor.execute(sql_find, params)
+            columns = [desc[0] for desc in self.cursor.description]
+            rows = self.cursor.fetchall()
+            return columns, rows
+        except Exception as e:
+            messagebox.showerror("Lỗi Tìm Học Phần", f"Có lỗi xảy ra khi tìm kiếm học phần:\n{e}")
+            return [], []
+        
+    def fetch_student_info(self, masv):
+        """Lấy TÊN của sinh viên dựa trên MASV."""
+        sql = "SELECT TEN FROM SVIEN WHERE MASV = ?"
+        # fetch_mode="one" sẽ trả về một tuple (TEN,) hoặc None
+        return self._execute_query(sql, (masv,), fetch_mode="one")
+
+    def fetch_grades_for_student(self, masv):
+        """
+        Lấy bảng điểm chi tiết cho một sinh viên, JOIN để lấy Tên Môn Học và Số Tín Chỉ.
+        """
+        sql = """
+            SELECT K.MAHP, MH.TEN_MH, MH.SOTINCHI, K.DIEM
+            FROM KETQUA K
+            JOIN HOCPHAN HP ON K.MAHP = HP.MAHP
+            JOIN MHOC MH ON HP.MAMH = MH.MAMH
+            WHERE K.MASV = ?
+            ORDER BY K.MAHP
+        """
+        # fetch_mode="all" trả về (columns, rows)
+        return self._execute_query(sql, (masv,), fetch_mode="all")
+
+    def calculate_gpa_raw(self, masv):
+        """
+        Lấy dữ liệu thô để tính GPA: Tổng(Điểm * Tín Chỉ) và Tổng(Tín Chỉ).
+        Việc tính toán (chia) sẽ được thực hiện trong Python để tránh lỗi chia cho 0.
+        """
+        sql = """
+            SELECT SUM(K.DIEM * MH.SOTINCHI), SUM(MH.SOTINCHI)
+            FROM KETQUA K
+            JOIN HOCPHAN HP ON K.MAHP = HP.MAHP
+            JOIN MHOC MH ON HP.MAMH = MH.MAMH
+            WHERE K.MASV = ? AND K.DIEM IS NOT NULL
+        """
+        # fetch_mode="one" trả về (SUM_DIEM_TC, SUM_TC)
+        return self._execute_query(sql, (masv,), fetch_mode="one")
+
+    def add_or_update_grade(self, masv, mahp, diem):
+        """
+        Thêm mới hoặc cập nhật điểm (UPSERT) cho sinh viên trong bảng KETQUA.
+        Sử dụng MERGE để xử lý cả hai trường hợp (INSERT nếu chưa có, UPDATE nếu đã có).
+        """
+        sql_merge = """
+            MERGE INTO KETQUA AS T
+            USING (VALUES (?, ?, ?)) AS S (MASV, MAHP, DIEM)
+            ON T.MASV = S.MASV AND T.MAHP = S.MAHP
+            WHEN MATCHED THEN 
+                UPDATE SET T.DIEM = S.DIEM
+            WHEN NOT MATCHED THEN 
+                INSERT (MASV, MAHP, DIEM) VALUES (S.MASV, S.MAHP, S.DIEM);
+        """
+        try:
+            # fetch_mode="no_fetch_commit" (đã có trong file của bạn)
+            return self._execute_query(sql_merge, (masv, mahp, diem), fetch_mode="no_fetch_commit")
+        except pyodbc.IntegrityError as e:
+            error_message = str(e)
+            print(f"LỖI DB (Update Grade): {error_message}")
+            if "CHECK constraint" in error_message and "DIEM" in error_message:
+                messagebox.showwarning("Lỗi Dữ Liệu", "Điểm phải là một số hợp lệ từ 0 đến 10.")
+            elif "FOREIGN KEY constraint 'FK_KETQUA'" in error_message:
+                messagebox.showwarning("Lỗi Dữ Liệu", f"Mã sinh viên '{masv}' không tồn tại trong bảng SVIEN.")
+            # Lưu ý: Bạn nên thêm FK từ KETQUA(MAHP) -> HOCPHAN(MAHP)
+            # Nếu bạn đã thêm, lỗi FK đó cũng sẽ được bắt ở đây.
+            else:
+                messagebox.showwarning("Lỗi Toàn Vẹn", f"Lỗi toàn vẹn không xác định: {e}")
+            return False
+        except Exception as e:
+            messagebox.showerror("Lỗi Cập Nhật Điểm", f"Đã xảy ra lỗi: {e}")
+            return False
+    
