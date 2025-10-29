@@ -1,5 +1,3 @@
-# main.py (Đã nâng cấp lên CustomTkinter)
-
 import customtkinter as ctk
 from db_manager import DB_Manager
 from main_app import MainApp
@@ -11,13 +9,6 @@ SERVER_NAME = r'LAPTOP-O68GMDB5'
 DATABASE_NAME = 'QLSV'
 SQL_USER = 'sa'
 SQL_PASSWORD = '123' 
-
-# --- MÃ MÀU TÙY CHỈNH (TỪ ẢNH) ---
-# Dùng cho LoginView
-COLOR_DARK_BLUE = "#0f1e3f"
-COLOR_LIGHT_GOLD = "#cdaa80"
-COLOR_DARK_GOLD = "#997953"
-COLOR_WHITE = "#FFFFFF"
 
 def main():
     
@@ -33,6 +24,7 @@ def main():
     # 3. Khởi tạo DB Manager
     db_manager = DB_Manager(SERVER_NAME, DATABASE_NAME, SQL_USER, SQL_PASSWORD)
     if not db_manager.connect():
+        # Lỗi kết nối DB ban đầu (từ db_manager) đã hiển thị messagebox
         root.destroy()
         sys.exit() 
 
@@ -40,21 +32,16 @@ def main():
     # Dùng CTkToplevel thay vì tk.Toplevel
     login_window = ctk.CTkToplevel(root)
     
-    # Truyền các mã màu tùy chỉnh vào LoginView
+    # LoginView sẽ tự import hằng số màu, không cần truyền vào nữa
     LoginView(
         master=login_window, 
         db_manager=db_manager, 
-        main_app_class=MainApp,
-        colors={
-            "dark_blue": COLOR_DARK_BLUE,
-            "light_gold": COLOR_LIGHT_GOLD,
-            "dark_gold": COLOR_DARK_GOLD,
-            "white": COLOR_WHITE
-        }
+        main_app_class=MainApp
     )
     
     root.mainloop()
     
+    # Chỉ disconnect khi root.mainloop() kết thúc (app đóng)
     db_manager.disconnect()
 
 if __name__ == "__main__":
