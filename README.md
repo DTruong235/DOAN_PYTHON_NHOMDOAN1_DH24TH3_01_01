@@ -54,22 +54,6 @@ Cấu trúc project (chính)
 	- `ui_utils.py` — helper UI (chung cho các tab)
 - `items/` — chứa tài nguyên ảnh/icon dùng cho UI (ví dụ `open_eye.png`, `closed_eye.png`).
 
-Cây cấu trúc dự án (ASCII)
----------------------------
-DTH235802_LAMDUCTRUONG_DOAN/
-├─ constants.py            # Hằng số (màu, kích thước, config)
-├─ db_manager.py          # Data access layer — kết nối pyodbc + CRUD
-├─ login_view.py          # Màn hình đăng nhập (toggle mật khẩu)
-├─ main_app.py            # Cửa sổ chính (Notebook, tab Sinh viên, handlers)
-├─ README.md              # Tài liệu dự án
-├─ run_app.py             # Entry-point: thiết lập theme CTk và khởi chạy app
-├─ gui/                   # UI modular (mỗi tab tách file riêng)
-│  ├─ student_tab.py      # Tab Sinh viên
-│  ├─ subject_tab.py      # Tab Môn học
-│  ├─ grade_tab.py        # Tab Bảng điểm
-│  ├─ course_tab.py       # Tab Course / Khóa học (nếu dùng)
-│  └─ ui_utils.py         # Helper UI chung
-└─ items/                 # Tài nguyên ảnh/icon (open_eye.png, closed_eye.png, ...)
 
 Chi tiết chức năng (hiện có trong mã)
 -------------------------------------
