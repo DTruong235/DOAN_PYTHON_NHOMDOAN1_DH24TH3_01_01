@@ -1,114 +1,183 @@
-DTH235802_LAMDUCTRUONG_DOAN — Giới thiệu đồ án
-
-Phiên bản: 30/10/2025
-
-Tổng quan
----------
-Đây là một prototype ứng dụng desktop quản lý sinh viên viết bằng Python. Giao diện sử dụng CustomTkinter (CTk) để có giao diện hiện đại hơn so với Tkinter thuần. Ứng dụng kết nối tới Microsoft SQL Server thông qua `pyodbc` và bao gồm các chức năng CRUD cơ bản cho sinh viên, màn hình đăng nhập, và một cửa sổ chính có nhiều tab (Sinh viên, Môn học, Bảng điểm).
-
-Mục tiêu
---------
-- Xây dựng prototype quản lý sinh viên (thêm, xóa, tìm kiếm, hiển thị danh sách).
-- Thực hành tích hợp GUI với DB (pyodbc + MSSQL).
-- Áp dụng nguyên tắc an toàn cơ bản khi thao tác DB (parameterized queries, transaction handling).
-
-Cấu trúc chính của dự án
-# DTH235802_LAMDUCTRUONG_DOAN
-
+DTH235802_LAMDUCTRUONG_DOAN
 Phiên bản tài liệu: 30/10/2025
 
 Tóm tắt
--------
-Đây là một ứng dụng desktop prototype để quản lý sinh viên, phát triển bằng Python. Giao diện chính sử dụng CustomTkinter (CTk) để cung cấp giao diện hiện đại; project kết hợp GUI với Data Access Layer (MS SQL Server qua `pyodbc`).
+Đây là một ứng dụng desktop prototype để quản lý sinh viên, phát triển bằng Python. Giao diện chính sử dụng CustomTkinter (CTk) để cung cấp giao diện hiện đại; project kết hợp GUI với Data Access Layer (MS SQL Server qua pyodbc).
 
 Mục tiêu
---------
-- Cung cấp prototype có: màn hình đăng nhập, cửa sổ chính nhiều tab, CRUD cho sinh viên, và nền tảng để phát triển các module môn học/bảng điểm.
-- Thực hành tích hợp GUI ↔ DB, xử lý input/validation, và áp dụng các nguyên tắc an toàn truy vấn cơ bản.
+Cung cấp prototype có: màn hình đăng nhập, cửa sổ chính nhiều tab, và các chức năng CRUD đầy đủ cho 4 module: Sinh viên, Môn học, Học phần và Bảng điểm.
+
+Thực hành tích hợp GUI ↔ DB, xử lý input/validation, và áp dụng các nguyên tắc an toàn truy vấn cơ bản (truy vấn tham số hóa).
 
 Yêu cầu / Phụ thuộc
--------------------
-- Python 3.8+
-- Thư viện chính: `customtkinter`, `pillow`, `pyodbc`
+Python 3.8+
 
-Cài nhanh (PowerShell):
+MS SQL Server (Đã được cài đặt và đang chạy)
 
-```powershell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install --upgrade pip
-pip install customtkinter pillow pyodbc
-```
+ODBC Driver 17 (hoặc 18) for SQL Server
 
-Hoặc tạo `requirements.txt` bằng cách yêu cầu tôi làm (tôi có thể tạo file này).
+Cài đặt Thư viện Python
+(Khuyên dùng) Bạn nên tạo và kích hoạt một môi trường ảo (venv) trước khi cài đặt.
 
+Cách 1: Dùng requirements.txt (Khuyên dùng)
+
+Tạo một file mới trong thư mục gốc của dự án tên là requirements.txt.
+
+Copy và dán nội dung sau vào file:
+
+Plaintext
+
+customtkinter
+pillow
+pyodbc
+tkcalendar
+Chạy lệnh sau để cài đặt tất cả thư viện cùng một lúc:
+
+Bash
+
+pip install -r requirements.txt
+Cách 2: Cài đặt thủ công
+
+Bạn cũng có thể cài đặt từng thư viện riêng lẻ bằng lệnh:
+
+Bash
+
+pip install customtkinter pillow pyodbc tkcalendar
 Cấu trúc project (chính)
--------------------------
-- `constants.py` — hằng số dùng trong app (màu, kích thước, ...).
-- `db_manager.py` — lớp `DB_Manager`: quản lý kết nối ODBC và các hàm CRUD (SV; có thể mở rộng MH/Score).
-- `login_view.py` — giao diện đăng nhập (toggle password, xử lý xác thực demo và khởi tạo `MainApp`).
-- `main_app.py` — giao diện chính (MainApp) xây dựng Notebook/tab, tab Sinh viên (form + Treeview). Có thể tham chiếu tới `gui/` để tách bớt UI.
-- `run_app.py` — entry-point: thiết lập theme CTk và khởi động ứng dụng.
-- `gui/` — thư mục chứa các module UI tách rời (nếu đã chia):
-	- `student_tab.py`, `subject_tab.py`, `grade_tab.py`, `course_tab.py` — (tab UI modular)
-	- `ui_utils.py` — helper UI (chung cho các tab)
-- `items/` — chứa tài nguyên ảnh/icon dùng cho UI (ví dụ `open_eye.png`, `closed_eye.png`).
+constants.py — hằng số dùng trong app (màu, font, style widget).
 
+db_manager.py — lớp DB_Manager: quản lý kết nối ODBC và các hàm CRUD cho cả 4 module (Sinh viên, Môn học, Học phần, Kết quả).
+
+login_view.py — giao diện đăng nhập (toggle password, xử lý xác thực demo và khởi tạo MainApp).
+
+main_app.py — giao diện chính (MainApp) xây dựng Notebook/tab, chứa các tab module.
+
+run_app.py — entry-point: thiết lập theme CTk, khởi tạo DB_Manager và khởi động ứng dụng.
+
+gui/ — thư mục chứa các module UI tách rời:
+
+student_tab.py
+
+subject_tab.py
+
+course_tab.py
+
+grade_tab.py
+
+ui_utils.py — helper UI (hàm setup_themed_treeview dùng chung).
+
+items/ — chứa tài nguyên ảnh/icon dùng cho UI (open_eye.png, closed_eye.png).
 
 Chi tiết chức năng (hiện có trong mã)
--------------------------------------
-1) Màn hình đăng nhập
-	- Nhập username và password.
-	- Toggle hiển thị/ẩn mật khẩu bằng icon mắt.
-	- Xác thực demo (hardcoded `admin` / `123` trong phiên bản prototype) — khi thành công, mở `MainApp`.
+Màn hình đăng nhập
 
-2) Quản lý Sinh viên
-	- Xem danh sách sinh viên (Treeview) — cột: MASV, TEN, GIOITINH, NGAYSINH, DIACHI, KHOAHOC, KHOA, EMAIL.
-	- Thêm sinh viên (form với validation cơ bản).
-	- Xóa sinh viên (chọn hàng rồi xóa).
-	- Tìm kiếm theo MASV.
-	- Load/Refresh danh sách từ DB bằng `DB_Manager.fetch_all_students()`.
+Nhập username và password.
 
-3) (Modular) Môn học & Bảng điểm
-	- Project đã chứa thư mục `gui/` với các tab modular (subject_tab, grade_tab, course_tab, student_tab).
-	- Các tab có thể cung cấp: xem/ thêm/ xóa môn học, ghi/xóa điểm; những chức năng này sẽ gọi tương ứng đến các hàm DB (nếu `DB_Manager` triển khai: fetch_all_subjects, add_subject, add_score, v.v.).
+Toggle hiển thị/ẩn mật khẩu bằng icon mắt.
 
-4) Data layer — `DB_Manager`
-	- Kết nối MS SQL Server qua ODBC driver (chuỗi kết nối được xây dựng trong `db_manager.py`).
-	- Các phương thức hiện có: connect(), disconnect(), fetch_all_students(), add_student(), delete_student(), find_student().
-	- Các hàm subject/score có thể được thêm vào `DB_Manager` để tương thích với UI modular.
+Xác thực demo (hardcoded admin / 123) — khi thành công, mở MainApp.
 
-Sơ đồ DB
-----------------------------
-- Bảng SVIEN:
-	- MASV (PK, varchar)
-	- TEN (nvarchar)
-	- GIOITINH (nvarchar)
-	- NGAYSINH (date)
-	- DIACHI (nvarchar)
-	- KHOAHOC (int)
-	- KHOA (nvarchar)
-	- EMAIL (nvarchar)
+Module Quản lý Sinh viên (student_tab.py)
 
-- Bảng MONHOC:
-	- MAMH (PK)
-	- TENMH
-	- SOCHI
+CRUD và Tìm kiếm sinh viên.
 
-- Bảng KETQUA / DIEM:
-	- MASV (FK -> SVIEN)
-	- MAMH (FK -> MONHOC)
-	- DIEM (float)
-	- PRIMARY KEY (MASV, MAMH)
+Sử dụng tkcalendar cho ô nhập Ngày sinh.
+
+Validate dữ liệu đầu vào (ví dụ: regex cho MASV, email).
+
+Module Quản lý Môn học (subject_tab.py)
+
+CRUD và Tìm kiếm môn học.
+
+Validate dữ liệu đầu vào (ví dụ: regex cho MAMH, SOTC trong khoảng 1-10).
+
+Module Quản lý Học phần (course_tab.py)
+
+CRUD và Tìm kiếm học phần.
+
+Sử dụng CTkComboBox (đã readonly) để chọn MAMH từ danh sách môn học đang có trong DB.
+
+Module Quản lý Bảng điểm (grade_tab.py)
+
+Tìm kiếm sinh viên theo MASV để xem bảng điểm.
+
+Hiển thị Điểm trung bình (GPA) và Xếp loại tự động.
+
+Cho phép Thêm/Cập nhật hoặc Xóa điểm của sinh viên cho một học phần cụ thể.
+
+Data layer (db_manager.py)
+
+Kết nối MS SQL Server qua ODBC driver.
+
+Sử dụng _execute_query làm hàm thực thi trung tâm, áp dụng truy vấn tham số hóa (chống SQL Injection).
+
+Xử lý lỗi pyodbc.IntegrityError (ví dụ: lỗi khóa chính, khóa ngoại) và ném (raise) lỗi để lớp UI bắt và hiển thị thông báo.
+
+Đã triển khai đầy đủ các phương thức CRUD cho cả 4 module, bao gồm các truy vấn phức tạp như MERGE (cho add_or_update_grade) và SUM/JOIN (cho calculate_gpa_raw).
+
+Sơ đồ DB (Chính xác theo code)
+Bảng SVIEN:
+
+MASV (PK, varchar)
+
+TEN (nvarchar)
+
+GIOITINH (nvarchar)
+
+NGAYSINH (date)
+
+DIACHI (nvarchar)
+
+KHOAHOC (int)
+
+KHOA (nvarchar)
+
+EMAIL (nvarchar)
+
+Bảng MHOC:
+
+MAMH (PK, varchar)
+
+TEN_MH (nvarchar)
+
+SOTINCHI (int)
+
+KHOA (nvarchar)
+
+Bảng HOCPHAN:
+
+MAHP (PK, int)
+
+MAMH (FK -> MHOC)
+
+HOCKY (int)
+
+NAMHOC (varchar)
+
+GV (nvarchar)
+
+Bảng KETQUA:
+
+MASV (FK -> SVIEN)
+
+MAHP (FK -> HOCPHAN)
+
+DIEM (float)
+
+PRIMARY KEY (MASV, MAHP)
 
 Hướng dẫn chạy nhanh
----------------------
-1. Kích hoạt virtualenv và cài phụ thuộc (xem phần "Yêu cầu / Phụ thuộc").
-2. Cấu hình thông tin DB: tốt nhất tạo file `.env` hoặc chỉnh `run_app.py` tạm thời để đặt `SERVER_NAME`, `DATABASE_NAME`, `SQL_USER`, `SQL_PASSWORD`.
-3. Chạy ứng dụng bằng PowerShell:
+Đảm bảo bạn đã cài đặt xong CSDL, Python và các thư viện (xem phần "Yêu cầu / Phụ thuộc").
 
-```powershell
+Cấu hình thông tin DB: Mở file run_app.py và chỉnh sửa các hằng số: SERVER_NAME, DATABASE_NAME, SQL_USER, SQL_PASSWORD cho khớp với máy của bạn.
+
+Chạy ứng dụng:
+
+PowerShell
+
 python run_app.py
-```
+Đăng nhập bằng tài khoản demo:
 
-Ghi chú: `run_app.py` sẽ khởi tạo theme CTk, kết nối DB và mở cửa sổ đăng nhập.
+Username: admin
+
+Password: 123
