@@ -156,7 +156,6 @@ class StudentTab(ctk.CTkFrame):
             messagebox.showerror("Lỗi Tải Dữ Liệu", f"Không thể tải danh sách sinh viên:\n{e}")
 
     def _get_and_validate_form_data(self):
-        # (Giữ nguyên logic validate của bạn)
         try:
             masv_raw = self.entries['masv'].get().strip()
             ten = self.entries['ten'].get().strip()
@@ -268,7 +267,6 @@ class StudentTab(ctk.CTkFrame):
                 messagebox.showerror("Lỗi Xóa", f"Có lỗi xảy ra khi xóa sinh viên: {e}")
 
     def _clear_entries(self):
-        # (Logic giống hệt file cũ)
         for key, entry_widget in self.entries.items():
             if isinstance(entry_widget, (ctk.CTkEntry, DateEntry)):
                 if key == 'search_masv':
@@ -299,7 +297,7 @@ class StudentTab(ctk.CTkFrame):
             messagebox.showerror("Lỗi Truy vấn Hệ thống", f"Đã xảy ra lỗi khi thực hiện tìm kiếm:\n{e}")
 
     def _on_student_select(self, event):
-        # (Logic giống hệt file cũ)
+   
         selected_item = self.tree.selection()
         if not selected_item: return
         values = self.tree.item(selected_item[0], 'values')

@@ -12,6 +12,7 @@ from gui.student_tab import StudentTab
 from gui.subject_tab import SubjectTab
 from gui.course_tab import CourseTab
 from gui.grade_tab import GradeTab
+from gui.prerequisite_tab import PrerequisiteTab
 
 class MainApp(ctk.CTkToplevel):
     def __init__(self, master, db_manager):
@@ -59,6 +60,7 @@ class MainApp(ctk.CTkToplevel):
         self.tab_sinhvien = notebook.add("Sinh viên")
         self.tab_mohoc = notebook.add("Môn học")
         self.tab_hocphan = notebook.add("Học phần")
+        self.tab_dkien = notebook.add("Điều Kiện")
         self.tab_bangdiem = notebook.add("Bảng điểm")
         
         # 2. Tạo các Class quản lý và đặt vào Tab
@@ -73,6 +75,9 @@ class MainApp(ctk.CTkToplevel):
 
         self.course_manager = CourseTab(self.tab_hocphan, self.db_manager)
         self.course_manager.pack(expand=True, fill="both")
+        
+        self.prerequisite_manager = PrerequisiteTab(self.tab_dkien, self.db_manager)
+        self.prerequisite_manager.pack(expand=True, fill="both")
         
         self.grade_manager = GradeTab(self.tab_bangdiem, self.db_manager)
         self.grade_manager.pack(expand=True, fill="both")

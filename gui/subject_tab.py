@@ -125,9 +125,9 @@ class SubjectTab(ctk.CTkFrame):
             messagebox.showerror("Lỗi Cấu Hình", f"Lỗi truy cập ô nhập liệu môn học '{e}'."); return None
         
         if not mamh_raw: messagebox.showwarning("Thiếu thông tin", "Mã môn học (MAMH) không được để trống."); return None
-        mamh = mamh_raw.lower()
+        mamh = mamh_raw.upper()
         
-        if not re.match(r'^[a-z]{3}\d{3}$', mamh): messagebox.showwarning("Lỗi Dữ Liệu", "Định dạng Mã Môn Học không hợp lệ (Yêu cầu: 3 chữ thường và 3 số, ví dụ: 'abc123')."); return None
+        if not re.match(r'^[A-Z]{3}\d{3}$', mamh): messagebox.showwarning("Lỗi Dữ Liệu", "Định dạng Mã Môn Học không hợp lệ (Yêu cầu: 3 chữ thường và 3 số, ví dụ: 'abc123')."); return None
         if not ten_mh: messagebox.showwarning("Thiếu thông tin", "Tên môn học không được để trống."); return None
         if not sotc_str: messagebox.showwarning("Thiếu thông tin", "Số tín chỉ không được để trống."); return None
         
@@ -147,7 +147,7 @@ class SubjectTab(ctk.CTkFrame):
         }
     
     def _handle_subject_integrity_error(self, e, mamh):
-        """(MỚI) Xử lý lỗi Integrity cho Môn học."""
+        """ Xử lý lỗi Integrity cho Môn học."""
         error_message = str(e)
         if "PRIMARY KEY" in error_message:
             messagebox.showwarning("Lỗi Dữ Liệu", f"Mã môn học '{mamh}' đã tồn tại.")
@@ -164,7 +164,7 @@ class SubjectTab(ctk.CTkFrame):
              messagebox.showwarning("Lỗi Toàn Vẹn", f"Lỗi toàn vẹn không xác định: {e}")
 
     def _on_subject_select(self, event):
-        # (Logic giống hệt file cũ)
+     
         selected_item = self.tree_mh.selection()
         if not selected_item: return
         values = self.tree_mh.item(selected_item[0], 'values')

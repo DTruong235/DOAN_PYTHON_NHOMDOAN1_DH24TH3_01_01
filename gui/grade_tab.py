@@ -253,6 +253,40 @@ class GradeTab(ctk.CTkFrame):
         except ValueError:
             messagebox.showwarning("Lỗi Dữ Liệu", "Điểm phải là một số hợp lệ từ 0 đến 10.")
             return
+        
+        try:
+        # Lấy MAMH từ MAHP
+            mamh = self.db_manager.get_mamh_from_mahp(mahp)
+            if mamh is None:
+             messagebox.showerror("Lỗi", f"Không tìm thấy Mã Môn Học cho Học Phần {mahp}.")
+             return
+
+        # Kiểm tra các môn còn thiếu (giả sử đậu >= 5.0)
+        # Hàm này giờ trả về danh sách các tuple: [('dsg101', 'Nhập môn lập trình'), ...]
+            missing_subjects_list = self.db_manager.check_missing_prerequisites(masv, mamh, 5.0)
+        
+            if missing_subjects_list:
+            
+            
+            # 1. Lấy tên học phần mà người dùng đang cố nhập điểm
+                hoc_phan_dang_chon = self.diem_entries['mahp_combo'].get()
+            
+            # 2. Tạo danh sách các môn thiếu (xuống dòng)
+                mon_thieu_str = ""
+                for (mamh_thieu, ten_mh_thieu) in missing_subjects_list:
+                    mon_thieu_str += f"\n- {ten_mh_thieu} ({mamh_thieu})"
+            
+            # 3. Hiển thị thông báo
+                messagebox.showwarning("Không đủ điều kiện", 
+                                   f"Sinh viên '{masv}' không thể nhập điểm cho học phần:\n"
+                                   f"'{hoc_phan_dang_chon}'\n\n"
+                                   f"Lý do: Chưa hoàn thành các môn tiên quyết sau:"
+                                   f"{mon_thieu_str}")
+                return # Dừng, không cho cập nhật điểm
+
+        except Exception as e:
+            messagebox.showerror("Lỗi Kiểm Tra Điều Kiện", f"Không thể xác minh môn tiên quyết:\n{e}")
+            return # Dừng
 
         try:
             self.db_manager.add_or_update_grade(masv, mahp, diem)

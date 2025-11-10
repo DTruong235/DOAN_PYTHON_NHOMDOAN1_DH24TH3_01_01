@@ -175,7 +175,7 @@ class DB_Manager:
     
     def add_subject(self, mamh, ten_mh, sotinchi, khoa='CNTT'):
         sql_insert = "INSERT INTO MHOC (MAMH, TEN_MH, SOTINCHI, KHOA) VALUES (?, ?, ?, ?)"
-        data_to_insert = (mamh.lower(), ten_mh, sotinchi, khoa)
+        data_to_insert = (mamh, ten_mh, sotinchi, khoa)
         self._execute_query(sql_insert, data_to_insert, fetch_mode="no_fetch_commit")
         return True
 
@@ -197,7 +197,7 @@ class DB_Manager:
     def find_subject(self, search_keyword):
         if not search_keyword:
             return self.fetch_all_subjects()
-        search_term = f"%{search_keyword.lower()}%"
+        search_term = f"%{search_keyword.upper()}%"
         sql_find = "SELECT MAMH, TEN_MH, SOTINCHI, KHOA FROM MHOC WHERE LOWER(MAMH) LIKE ? ORDER BY MAMH"
         return self._execute_query(sql_find, (search_term,), fetch_mode="all")
         
@@ -213,14 +213,15 @@ class DB_Manager:
         return self._execute_query(sql, fetch_mode="all")
 
     def add_hocphan(self, mahp, mamh, hocky, namhoc, gv):
+        
         sql_insert = "INSERT INTO HOCPHAN (MAHP, MAMH, HOCKY, NAMHOC, GV) VALUES (?, ?, ?, ?, ?)"
-        data_to_insert = (mahp, mamh.lower(), hocky, namhoc, gv)
+        data_to_insert = (mahp, mamh, hocky, namhoc, gv)
         self._execute_query(sql_insert, data_to_insert, fetch_mode="no_fetch_commit")
         return True
 
     def update_hocphan(self, mahp, mamh, hocky, namhoc, gv):
         sql_update = "UPDATE HOCPHAN SET MAMH = ?, HOCKY = ?, NAMHOC = ?, GV = ? WHERE MAHP = ?"
-        data_to_update = (mamh.lower(), hocky, namhoc, gv, mahp)
+        data_to_update = (mamh, hocky, namhoc, gv, mahp)
         rowcount = self._execute_query(sql_update, data_to_update, fetch_mode="commit")
         if rowcount == 0:
             raise ValueError(f"Không tìm thấy học phần '{mahp}' hoặc không có gì thay đổi.")
@@ -243,12 +244,105 @@ class DB_Manager:
             WHERE CAST(HP.MAHP AS VARCHAR) LIKE ? OR LOWER(HP.MAMH) LIKE ? OR LOWER(MH.TEN_MH) LIKE ? OR LOWER(HP.GV) LIKE ?
             ORDER BY HP.NAMHOC DESC, HP.HOCKY, HP.MAHP
         """
-        search_term_like = f"%{search_keyword.lower()}%"
+        search_term_like = f"%{search_keyword.upper()}%"
         params = (search_term_like, search_term_like, search_term_like, search_term_like)
         return self._execute_query(sql_find, params, fetch_mode="all")
+    
+    # --- CRUD CHO BẢNG DKIEN (MÔN TIÊN QUYẾT) ---
 
-    # --- (MỚI) CÁC HÀM CHO TAB BẢNG ĐIỂM ---
-    # (Các hàm này được gọi trong main_app.py nhưng bị thiếu trong db_manager.py)
+    def fetch_all_prerequisites(self):
+        """
+        Lấy tất cả các môn tiên quyết, JOIN với MHOC để lấy Tên Môn Học.
+        """
+        sql = """
+            SELECT 
+                D.MAMH,          -- Môn chính
+                M_CHINH.TEN_MH,  -- Tên môn chính
+                D.MAMH_TRUOC,    -- Môn tiên quyết
+                M_TRUOC.TEN_MH   -- Tên môn tiên quyết
+            FROM DKIEN D
+            -- Join để lấy tên môn chính
+            JOIN MHOC M_CHINH ON D.MAMH = M_CHINH.MAMH
+            -- Join để lấy tên môn tiên quyết
+            JOIN MHOC M_TRUOC ON D.MAMH_TRUOC = M_TRUOC.MAMH
+            ORDER BY D.MAMH, D.MAMH_TRUOC
+        """
+        # _execute_query sẽ ném lỗi nếu có
+        return self._execute_query(sql, fetch_mode="all")
+    
+    def get_mamh_from_mahp(self, mahp):
+        """Lấy Mã Môn Học (MAMH) từ Mã Học Phần (MAHP)."""
+        sql = "SELECT MAMH FROM HOCPHAN WHERE MAHP = ?"
+        try:
+            # Chuyển mahp sang int để truy vấn
+            result = self._execute_query(sql, (int(mahp),), fetch_mode="one")
+            if result:
+                return result[0] # Trả về MAMH (ví dụ: 'dsg101')
+            return None
+        except Exception as e:
+            print(f"Lỗi khi lấy MAMH từ MAHP: {e}")
+            return None # Lỗi hoặc không tìm thấy
+
+    def add_prerequisite(self, mamh, mamh_truoc):
+        """Thêm một ràng buộc môn tiên quyết mới vào bảng DKIEN."""
+        sql_insert = "INSERT INTO DKIEN (MAMH, MAMH_TRUOC) VALUES (?, ?)"
+        
+        # _execute_query sẽ ném pyodbc.IntegrityError nếu thất bại
+        self._execute_query(sql_insert, (mamh, mamh_truoc), fetch_mode="no_fetch_commit")
+        return True # Trả về True nếu không có lỗi
+
+    def delete_prerequisite(self, mamh, mamh_truoc):
+        """Xóa một ràng buộc môn tiên quyết."""
+        sql_delete = "DELETE FROM DKIEN WHERE MAMH = ? AND MAMH_TRUOC = ?"
+        
+        rowcount = self._execute_query(sql_delete, (mamh, mamh_truoc), fetch_mode="commit")
+        
+        if rowcount == 0:
+            # Ném lỗi tùy chỉnh nếu không tìm thấy
+            raise ValueError(f"Không tìm thấy ràng buộc (MAMH: {mamh}, MAMH_TRUOC: {mamh_truoc}) để xóa.")
+        
+        return True 
+    
+    def check_missing_prerequisites(self, masv, mamh, passing_grade=5.0):
+        """
+        Kiểm tra xem sinh viên (masv) còn thiếu môn tiên quyết nào
+        để học môn (mamh) hay không.
+        
+        TỐI ƯU: Dùng NOT EXISTS thay vì NOT IN để xử lý đúng
+        trường hợp sinh viên chưa có điểm nào.
+        """
+        sql = """
+            SELECT 
+                D.MAMH_TRUOC,  -- Mã môn thiếu
+                M.TEN_MH       -- Tên môn thiếu
+            FROM DKIEN D
+            JOIN MHOC M ON D.MAMH_TRUOC = M.MAMH
+            WHERE 
+                D.MAMH = ?  -- Môn chính đang xét
+                AND NOT EXISTS (
+                    -- Kiểm tra xem có tồn tại 1 dòng điểm ĐẬU của môn tiên quyết này không
+                    SELECT 1
+                    FROM KETQUA K
+                    JOIN HOCPHAN H ON K.MAHP = H.MAHP
+                    WHERE 
+                        K.MASV = ?                     -- Của sinh viên này
+                        AND H.MAMH = D.MAMH_TRUOC    -- Khớp với môn tiên quyết
+                        AND K.DIEM >= ?              -- Và đã đậu
+                )
+        """
+        try:
+            # _execute_query trả về (columns, rows)
+            _, missing_subjects_rows = self._execute_query(sql, (mamh, masv, passing_grade), fetch_mode="all")
+            
+            # missing_subjects_rows sẽ là: 
+            # [ ('dsg101', 'Nhập môn lập trình'), ('csd101', 'Cơ sở dữ liệu') ]
+            return missing_subjects_rows 
+            
+        except Exception as e:
+            # Ném LẠI (re-raise) lỗi GỐC để gui_tab có thể đọc được
+            print(f"Lỗi khi kiểm tra môn tiên quyết: {e}")
+            raise e
+    # --- QUẢN LÝ ĐIỂM SINH VIÊN ---
 
     def fetch_student_info(self, masv):
         """Lấy Tên của một SV."""

@@ -140,7 +140,6 @@ class CourseTab(ctk.CTkFrame):
             self.hocphan_entries['mahp'].focus()
 
     def _get_and_validate_hp_data(self):
-        # (Logic validate giống hệt file cũ)
         try: 
             mahp_str = self.hocphan_entries['mahp'].get().strip()
             mamh = self.hocphan_entries['mamh_hp'].get().strip()
@@ -188,7 +187,6 @@ class CourseTab(ctk.CTkFrame):
              messagebox.showwarning("Lỗi Toàn Vẹn", f"Lỗi toàn vẹn không xác định: {e}")
 
     def _on_hp_select(self, event):
-        # (Logic giống hệt file cũ)
         selected = self.tree_hp.selection()
         if not selected: return
         values = self.tree_hp.item(selected[0], 'values')
