@@ -37,13 +37,14 @@ python -m venv venv
 venv\Scripts\activate
 ```
 
-### 🔹 Cách 1: Dùng `requirements.txt` (Khuyên dùng)
+### 🔹 Dùng `requirements.txt`
 Tạo file `requirements.txt` trong thư mục gốc, với nội dung sau:
 ```
 customtkinter
 pillow
 pyodbc
 tkcalendar
+openpyxl
 ```
 
 Cài đặt toàn bộ thư viện:
@@ -51,12 +52,7 @@ Cài đặt toàn bộ thư viện:
 pip install -r requirements.txt
 ```
 
-### 🔹 Cách 2: Cài đặt thủ công
-```bash
-pip install customtkinter pillow pyodbc tkcalendar
-```
 
----
 
 ## 🗂️ Cấu trúc Project (chính)
 
@@ -97,6 +93,7 @@ pip install customtkinter pillow pyodbc tkcalendar
 - CRUD và **tìm kiếm sinh viên**.  
 - Ô nhập ngày sinh dùng `tkcalendar`.  
 - Validate đầu vào (regex cho **MASV**, **email**, v.v.).  
+- Cho phép **Xuất Danh sách Sinh viên**.
 
 ---
 
@@ -115,7 +112,8 @@ pip install customtkinter pillow pyodbc tkcalendar
 ### 🧮 **Module Quản lý Bảng điểm (`grade_tab.py`)**
 - Tìm kiếm sinh viên theo **MASV** để xem bảng điểm.  
 - Tính toán **Điểm trung bình (GPA)** và **Xếp loại tự động**.  
-- Cho phép **Thêm / Cập nhật / Xóa** điểm cho từng học phần.  
+- Cho phép **Thêm / Cập nhật / Xóa** điểm cho từng học phần. 
+- Cho phép **Xuất Bảng điểm** điểm cho từng sinh viên.  
 
 ---
 

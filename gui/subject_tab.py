@@ -31,17 +31,17 @@ class SubjectTab(ctk.CTkFrame):
         input_frame_mh.columnconfigure((0, 2), weight=0); input_frame_mh.columnconfigure((1, 3), weight=1)
         
         # MaMH
-        ctk.CTkLabel(input_frame_mh, text="Mã Môn Học (MAMH)", **APP_LABEL_STYLE).grid(row=0, column=0, padx=(15, 5), pady=10, sticky="w")
+        ctk.CTkLabel(input_frame_mh, text="Mã Môn Học", **APP_LABEL_STYLE).grid(row=0, column=0, padx=(15, 5), pady=10, sticky="w")
         entry_mamh = ctk.CTkEntry(input_frame_mh, width=150, **APP_ENTRY_STYLE)
         entry_mamh.grid(row=0, column=1, padx=5, pady=10, sticky="w"); self.subject_entries['mamh'] = entry_mamh
 
         # TenMH
-        ctk.CTkLabel(input_frame_mh, text="Tên Môn Học (TENMH)", **APP_LABEL_STYLE).grid(row=1, column=0, padx=(15, 5), pady=10, sticky="w")
+        ctk.CTkLabel(input_frame_mh, text="Tên Môn Học", **APP_LABEL_STYLE).grid(row=1, column=0, padx=(15, 5), pady=10, sticky="w")
         entry_tenmh = ctk.CTkEntry(input_frame_mh, **APP_ENTRY_STYLE)
         entry_tenmh.grid(row=1, column=1, columnspan=3, padx=5, pady=10, sticky="ew"); self.subject_entries['tenmh'] = entry_tenmh
         
         # SoTC
-        ctk.CTkLabel(input_frame_mh, text="Số Tín Chỉ (SOTC)", **APP_LABEL_STYLE).grid(row=0, column=2, padx=(15, 5), pady=10, sticky="w")
+        ctk.CTkLabel(input_frame_mh, text="Số Tín Chỉ", **APP_LABEL_STYLE).grid(row=0, column=2, padx=(15, 5), pady=10, sticky="w")
         entry_sotc = ctk.CTkEntry(input_frame_mh, width=80, **APP_ENTRY_STYLE)
         entry_sotc.grid(row=0, column=3, padx=5, pady=10, sticky="w"); self.subject_entries['sotc'] = entry_sotc
         

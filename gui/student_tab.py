@@ -5,11 +5,13 @@ from tkcalendar import DateEntry
 import re
 from datetime import datetime
 import pyodbc # Import để bắt lỗi
+from tkinter import filedialog
+import openpyxl
 
 # Import từ các file local
 from constants import (
     APP_DARK_BLUE, APP_LIGHT_GREY,
-    APP_ENTRY_STYLE, APP_LABEL_STYLE, APP_BUTTON_STYLE_YELLOW, APP_BUTTON_STYLE_RED
+    APP_ENTRY_STYLE, APP_LABEL_STYLE, APP_BUTTON_STYLE_YELLOW, APP_BUTTON_STYLE_RED, APP_BUTTON_STYLE_GREEN
 )
 from gui.ui_utils import setup_themed_treeview
 
@@ -75,7 +77,7 @@ class StudentTab(ctk.CTkFrame):
         entry_ngaysinh.delete(0, tk.END)
         self.entries['ngaysinh'] = entry_ngaysinh
 
-        # Second column
+       
         ctk.CTkLabel(input_frame, text="Địa chỉ", **APP_LABEL_STYLE).grid(row=0, column=2, padx=(15, 5), pady=8, sticky="w")
         entry_diachi = ctk.CTkEntry(input_frame, width=200, **APP_ENTRY_STYLE)
         entry_diachi.grid(row=0, column=3, padx=5, pady=8, sticky="w")
@@ -116,6 +118,9 @@ class StudentTab(ctk.CTkFrame):
         
         ctk.CTkButton(search_frame, text="Tìm", command=self.handle_search_and_load, width=80, **APP_BUTTON_STYLE_YELLOW).grid(row=0, column=2, padx=15, pady=10)
     
+    
+        ctk.CTkButton(search_frame, text="Xuất Excel", command=self.handle_export_students_to_excel, width=100, **APP_BUTTON_STYLE_GREEN).grid(row=0, column=3, padx=(0, 15), pady=10)
+        
     def _setup_student_treeview(self):
         columns_config = {
             "MASV": "Mã SV", "TEN": "Họ Tên", "GIOITINH": "Giới tính",
@@ -328,3 +333,62 @@ class StudentTab(ctk.CTkFrame):
              self._handle_student_integrity_error(e, data['masv'])
         except Exception as e:
             messagebox.showerror("Lỗi Cập Nhật", f"Có lỗi xảy ra khi cập nhật sinh viên: {e}")
+            
+    
+    def handle_export_students_to_excel(self):
+        """
+        Xuất dữ liệu sinh viên (đang hiển thị trên Treeview) ra file Excel.
+        """
+        # Đề xuất tên file
+        default_filename = f"Danh_sach_Sinh_vien.xlsx"
+        
+        # 1. Hỏi người dùng muốn lưu file ở đâu
+        file_path = filedialog.asksaveasfilename(
+            title="Lưu danh sách sinh viên",
+            initialfile=default_filename,
+            defaultextension=".xlsx",
+            filetypes=[("Excel Workbook", "*.xlsx"), ("All Files", "*.*")]
+        )
+        
+        # Nếu người dùng nhấn "Cancel"
+        if not file_path:
+            return
+
+        try:
+            # 2. Tạo một Workbook Excel mới
+            wb = openpyxl.Workbook()
+            ws = wb.active
+            ws.title = "Danh Sách Sinh Viên"
+
+            # 3. Lấy tiêu đề từ Treeview
+            headers = [self.tree.heading(col)["text"] for col in self.tree["columns"]]
+            ws.append(headers)
+            
+            # (Tùy chọn: Làm đậm tiêu đề)
+            for cell in ws[1]:
+                cell.font = openpyxl.styles.Font(bold=True)
+
+            # 4. Lấy dữ liệu từ Treeview
+            for item_id in self.tree.get_children():
+                row_values = self.tree.item(item_id, 'values')
+                ws.append(row_values)
+                
+            # (Tùy chọn: Tự động chỉnh độ rộng cột)
+            for col in ws.columns:
+                max_length = 0
+                column = col[0].column_letter # Lấy tên cột (A, B, C...)
+                for cell in col:
+                    try:
+                        if len(str(cell.value)) > max_length:
+                            max_length = len(cell.value)
+                    except:
+                        pass
+                adjusted_width = (max_length + 2)
+                ws.column_dimensions[column].width = adjusted_width
+
+            # 5. Lưu file
+            wb.save(file_path)
+            messagebox.showinfo("Thành công", f"Đã xuất danh sách sinh viên thành công!\nĐường dẫn: {file_path}")
+
+        except Exception as e:
+            messagebox.showerror("Lỗi Xuất Excel", f"Có lỗi xảy ra khi lưu file:\n{e}")

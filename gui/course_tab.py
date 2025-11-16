@@ -43,12 +43,12 @@ class CourseTab(ctk.CTkFrame):
         input_frame_hp.columnconfigure((0, 2), weight=0); input_frame_hp.columnconfigure((1, 3), weight=1)
         
         # MaHP
-        ctk.CTkLabel(input_frame_hp, text="Mã Học Phần (MAHP)", **APP_LABEL_STYLE).grid(row=0, column=0, padx=(15, 5), pady=10, sticky="w")
+        ctk.CTkLabel(input_frame_hp, text="Mã Học Phần", **APP_LABEL_STYLE).grid(row=0, column=0, padx=(15, 5), pady=10, sticky="w")
         entry_mahp = ctk.CTkEntry(input_frame_hp, width=120, **APP_ENTRY_STYLE)
         entry_mahp.grid(row=0, column=1, padx=5, pady=10, sticky="w"); self.hocphan_entries['mahp'] = entry_mahp
         
         # MaMH ComboBox
-        ctk.CTkLabel(input_frame_hp, text="Mã Môn Học (MAMH)", **APP_LABEL_STYLE).grid(row=0, column=2, padx=(15, 5), pady=10, sticky="w")
+        ctk.CTkLabel(input_frame_hp, text="Mã Môn Học", **APP_LABEL_STYLE).grid(row=0, column=2, padx=(15, 5), pady=10, sticky="w")
         entry_mamh_hp = ctk.CTkComboBox(input_frame_hp, width=150, **APP_COMBOBOX_STYLE)
         entry_mamh_hp.grid(row=0, column=3, padx=5, pady=10, sticky="w"); self.hocphan_entries['mamh_hp'] = entry_mamh_hp
         self._populate_mamh_combobox() # Tải dữ liệu
@@ -79,7 +79,7 @@ class CourseTab(ctk.CTkFrame):
 
     def _setup_hp_search_bar(self, search_frame_hp):
         search_frame_hp.columnconfigure(1, weight=1)
-        ctk.CTkLabel(search_frame_hp, text="Tìm HP (MãHP/MãMH/TênMH/GV):", **APP_LABEL_STYLE).grid(row=0, column=0, padx=(15, 5), pady=10)
+        ctk.CTkLabel(search_frame_hp, text="Tìm HP:", **APP_LABEL_STYLE).grid(row=0, column=0, padx=(15, 5), pady=10)
         entry_search_hp = ctk.CTkEntry(search_frame_hp, placeholder_text="Nhập từ khóa...", **APP_ENTRY_STYLE)
         entry_search_hp.grid(row=0, column=1, padx=5, pady=10, sticky="ew")
         self.hocphan_entries['search_hp'] = entry_search_hp
@@ -181,7 +181,7 @@ class CourseTab(ctk.CTkFrame):
              messagebox.showwarning("Lỗi Dữ Liệu", f"Mã môn học '{mamh}' không tồn tại trong bảng Môn Học.")
         elif "CHECK constraint" in error_message: 
              messagebox.showwarning("Lỗi Dữ Liệu", "Mã học phần phải là số nguyên dương.")
-        elif "FOREIGN KEY" in error_message: # Lỗi khi xóa
+        elif "FOREIGN KEY" in error_message:
              messagebox.showwarning("Lỗi Ràng Buộc", f"Không thể xóa học phần '{mahp}' vì có dữ liệu điểm liên quan.")
         else:
              messagebox.showwarning("Lỗi Toàn Vẹn", f"Lỗi toàn vẹn không xác định: {e}")
@@ -235,7 +235,7 @@ class CourseTab(ctk.CTkFrame):
                 messagebox.showinfo("OK", f"Xóa HP {mahp} thành công.")
                 self.handle_refresh_hp()
             except pyodbc.IntegrityError as e:
-                self._handle_hocphan_integrity_error(e, mahp) # Lỗi FK
+                self._handle_hocphan_integrity_error(e, mahp)
             except Exception as e:
                 messagebox.showerror("Lỗi Xóa", f"Lỗi không xác định khi xóa học phần: {e}")
 

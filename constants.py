@@ -10,11 +10,14 @@ COLOR_WHITE = "#FFFFFF"
 # Dùng cho MainApp (Tên nhất quán)
 APP_DARK_BLUE = "#142143"
 APP_YELLOW = "#ffaf00"
-APP_LIGHT_GREY = "#e4e4e4" # Dùng cho text trên nền tối
+APP_LIGHT_GREY = "#e4e4e4" 
 APP_MID_BLUE = "#1a5d94"
+APP_GREEN_EXPORT = "#229954"
+APP_GREEN_EXPORT_HOVER = "#1E8449"
 APP_HOVER_YELLOW = "#EAA000"
 APP_RED_DELETE = "#D32F2F"
 APP_RED_DELETE_HOVER = "#B71C1C"
+
 
 
 # --- Fonts ---
@@ -59,6 +62,13 @@ APP_BUTTON_STYLE_RED = {
     "font": FONT_BOLD_DEFAULT,
     "fg_color": APP_RED_DELETE,
     "hover_color": APP_RED_DELETE_HOVER,
+    "text_color": COLOR_WHITE
+}
+
+APP_BUTTON_STYLE_GREEN = {
+    "font": FONT_BOLD_DEFAULT,
+    "fg_color": APP_GREEN_EXPORT,
+    "hover_color": APP_GREEN_EXPORT_HOVER,
     "text_color": COLOR_WHITE
 }
 

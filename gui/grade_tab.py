@@ -2,12 +2,16 @@ import customtkinter as ctk
 import tkinter as tk
 from tkinter import ttk, messagebox
 import pyodbc
+from tkinter import filedialog
+import openpyxl
+from openpyxl.styles import Font, Alignment 
+from openpyxl.utils import get_column_letter
 
 # Import hằng số và tiện ích
 from constants import (
     APP_DARK_BLUE, APP_LIGHT_GREY, COLOR_WHITE, APP_YELLOW,
     APP_ENTRY_STYLE, APP_LABEL_STYLE, APP_BUTTON_STYLE_YELLOW,
-    APP_COMBOBOX_STYLE, APP_BUTTON_STYLE_RED,
+    APP_COMBOBOX_STYLE, APP_BUTTON_STYLE_RED, APP_BUTTON_STYLE_GREEN,
     APP_COMBOBOX_STYLE
 )
 from gui.ui_utils import setup_themed_treeview
@@ -25,11 +29,11 @@ class GradeTab(ctk.CTkFrame):
 
     def _setup_layout_bangdiem(self,):
         self.columnconfigure(0, weight=1)
-        self.rowconfigure(2, weight=1) # Treeview co giãn
+        self.rowconfigure(2, weight=1) 
 
         frame_fg_color = APP_DARK_BLUE
         
-        # --- 1. Frame Tìm Kiếm (row 0) ---
+        # --- 1. Frame Tìm Kiếm ---
         frame_top_diem = ctk.CTkFrame(self, fg_color=frame_fg_color, corner_radius=10)
         frame_top_diem.grid(row=0, column=0, padx=10, pady=10, sticky="new")
         frame_top_diem.columnconfigure(1, weight=1)
@@ -42,7 +46,7 @@ class GradeTab(ctk.CTkFrame):
         ctk.CTkButton(frame_top_diem, text="Tìm SV", command=self.handle_search_student_grades, width=80, **APP_BUTTON_STYLE_YELLOW).grid(row=0, column=2, padx=10, pady=10)
         ctk.CTkButton(frame_top_diem, text="Làm Mới", command=self.handle_refresh_grades, width=80, **APP_BUTTON_STYLE_YELLOW).grid(row=0, column=3, padx=(0, 15), pady=10)
         
-        # --- 2. Frame Cập Nhật & Thông Tin (row 1) ---
+        # --- 2. Frame Cập Nhật & Thông Tin ---
         self.frame_edit_diem = ctk.CTkFrame(self, fg_color=frame_fg_color, corner_radius=10)
         self.frame_edit_diem.grid(row=1, column=0, padx=10, pady=(0, 10), sticky="new")
         self.frame_edit_diem.columnconfigure((1, 3, 5), weight=1)
@@ -81,7 +85,9 @@ class GradeTab(ctk.CTkFrame):
 
         ctk.CTkButton(self.frame_edit_diem, text="Xóa Điểm", command=self.handle_delete_grade, **APP_BUTTON_STYLE_RED).grid(row=3, column=3, padx=15, pady=10, sticky="w")
 
-        # --- 3. Frame Treeview (row 2) ---
+        ctk.CTkButton(self.frame_edit_diem, text="Xuất Bảng Điểm", command=self.handle_export_grades_to_excel, **APP_BUTTON_STYLE_GREEN).grid(row=3, column=4, padx=(15, 5), pady=10, sticky="w")
+        
+        # --- 3. Frame Treeview  ---
         self.frame_tree_diem = ctk.CTkFrame(self, fg_color=frame_fg_color, corner_radius=10)
         self.frame_tree_diem.grid(row=2, column=0, padx=10, pady=10, sticky="nsew") 
         self._setup_diem_treeview(self.frame_tree_diem)
@@ -356,3 +362,86 @@ class GradeTab(ctk.CTkFrame):
         self.frame_edit_diem.grid_remove()
             
         self._populate_hp_combobox_diem()
+        
+    def handle_export_grades_to_excel(self):
+        """
+        Xuất bảng điểm của sinh viên đang xem ra file Excel.
+        """
+        
+        # 1. Lấy thông tin sinh viên
+        masv = self.diem_info_labels['masv'].cget('text')
+        ten_sv = self.diem_info_labels['ten'].cget('text')
+        dtb = self.diem_info_labels['dtb'].cget('text')
+        xep_loai = self.diem_info_labels['xeploai'].cget('text')
+        
+        # 2. Đề xuất tên file mặc định
+        default_filename = f"BangDiem_{masv}_{ten_sv.replace(' ', '_')}.xlsx"
+
+        # 3. Hỏi người dùng muốn lưu file ở đâu
+        file_path = filedialog.asksaveasfilename(
+            title=f"Lưu bảng điểm cho SV {masv}",
+            initialfile=default_filename,
+            defaultextension=".xlsx",
+            filetypes=[("Excel Workbook", "*.xlsx"), ("All Files", "*.*")]
+        )
+        
+        if not file_path:
+            return
+
+        try:
+            # 4. Tạo Workbook và Sheet
+            wb = openpyxl.Workbook()
+            ws = wb.active
+            ws.title = f"Bảng Điểm {masv}"
+            
+            # --- Định dạng file Excel ---
+            
+            # Tiêu đề chính
+            ws.merge_cells('A1:D1')
+            title_cell = ws['A1']
+            title_cell.value = "BẢNG ĐIỂM SINH VIÊN"
+            title_cell.font = Font(size=16, bold=True)
+            title_cell.alignment = Alignment(horizontal='center')
+            
+            # Thông tin sinh viên
+            ws['A3'] = "Mã số sinh viên:"
+            ws['B3'] = masv
+            ws['A4'] = "Họ và tên:"
+            ws['B4'] = ten_sv
+            
+            ws['C3'] = "Điểm TB (Hệ 10):"
+            ws['D3'] = dtb
+            ws['C4'] = "Xếp loại:"
+            ws['D4'] = xep_loai
+            
+            # Làm đậm các nhãn thông tin
+            for cell_id in ['A3', 'A4', 'C3', 'C4']:
+                ws[cell_id].font = Font(bold=True)
+
+            # 5. Tiêu đề bảng điểm
+            headers = [self.tree_diem.heading(col)["text"] for col in self.tree_diem["columns"]]
+            # headers = ("MAHP", "TENMH", "SOTC", "DIEM")
+            ws.append([]) # Thêm 1 dòng trống
+            ws.append(headers)
+            
+            header_row = ws[6] # Dòng tiêu đề là dòng 6
+            for cell in header_row:
+                cell.font = Font(bold=True)
+                cell.alignment = Alignment(horizontal='center')
+
+            # 6. Thêm dữ liệu điểm từ Treeview
+            for item_id in self.tree_diem.get_children():
+                row_values = self.tree_diem.item(item_id, 'values')
+                ws.append(row_values)
+            
+            # 7. Tự động chỉnh độ rộng cột
+            column_widths = {'A': 15, 'B': 40, 'C': 15, 'D': 15} # (MAHP, TENMH, SOTC, DIEM)
+            for col_letter, width in column_widths.items():
+                ws.column_dimensions[col_letter].width = width
+
+            # 8. Lưu file
+            wb.save(file_path)
+            messagebox.showinfo("Thành công", f"Đã xuất bảng điểm thành công!\nĐường dẫn: {file_path}")
+
+        except Exception as e:
+            messagebox.showerror("Lỗi Xuất Excel", f"Có lỗi xảy ra khi lưu file:\n{e}\n(Có thể file đang được mở bởi chương trình khác.)")

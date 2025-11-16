@@ -26,16 +26,16 @@ class PrerequisiteTab(ctk.CTkFrame):
 
     def _setup_layout(self):
         self.columnconfigure(0, weight=1)
-        self.rowconfigure(1, weight=1) # Treeview co giãn
+        self.rowconfigure(1, weight=1)
 
         frame_fg_color = APP_DARK_BLUE
 
-        # --- 1. Frame Nhập Liệu (row 0) ---
+        # --- 1. Frame Nhập Liệu  ---
         input_frame = ctk.CTkFrame(self, fg_color=frame_fg_color, corner_radius=10)
         input_frame.grid(row=0, column=0, padx=10, pady=10, sticky="new")
         self._setup_input_fields(input_frame)
         
-        # --- 2. Frame Treeview (row 1) ---
+        # --- 2. Frame Treeview  ---
         tree_frame = ctk.CTkFrame(self, fg_color=frame_fg_color, corner_radius=10)
         tree_frame.grid(row=1, column=0, padx=10, pady=10, sticky="nsew")
         self._setup_dkien_treeview(tree_frame)
@@ -44,17 +44,17 @@ class PrerequisiteTab(ctk.CTkFrame):
         self.load_all_data()
 
     def _setup_input_fields(self, input_frame):
-        input_frame.columnconfigure(1, weight=1)
-        input_frame.columnconfigure(3, weight=1)
+        input_frame.columnconfigure((1, 3), weight=1)
+        input_frame.columnconfigure(2, weight=0) 
         
         # ComboBox Môn chính (MAMH)
-        ctk.CTkLabel(input_frame, text="Môn Học Chính:", **APP_LABEL_STYLE).grid(row=0, column=0, padx=(15, 5), pady=10, sticky="w")
+        ctk.CTkLabel(input_frame, text="Môn học chính:", **APP_LABEL_STYLE).grid(row=0, column=0, padx=(15, 5), pady=10, sticky="w")
         combo_mamh = ctk.CTkComboBox(input_frame, **APP_COMBOBOX_STYLE, values=[])
         combo_mamh.grid(row=0, column=1, padx=5, pady=10, sticky="ew")
         self.entries['mamh_combo'] = combo_mamh
 
         # ComboBox Môn tiên quyết (MAMH_TRUOC)
-        ctk.CTkLabel(input_frame, text="Môn Tiên Quyết:", **APP_LABEL_STYLE).grid(row=1, column=0, padx=(15, 5), pady=10, sticky="w")
+        ctk.CTkLabel(input_frame, text="Môn học tiên quyết:", **APP_LABEL_STYLE).grid(row=1, column=0, padx=(15, 5), pady=10, sticky="w")
         combo_mamh_truoc = ctk.CTkComboBox(input_frame, **APP_COMBOBOX_STYLE, values=[])
         combo_mamh_truoc.grid(row=1, column=1, padx=5, pady=10, sticky="ew")
         self.entries['mamh_truoc_combo'] = combo_mamh_truoc
@@ -62,11 +62,40 @@ class PrerequisiteTab(ctk.CTkFrame):
         # Frame chứa các nút
         button_frame = ctk.CTkFrame(input_frame, fg_color="transparent")
         button_frame.grid(row=0, column=2, rowspan=2, columnspan=2, padx=15, pady=10, sticky="nsew")
-        button_frame.columnconfigure(0, weight=1)
+        button_frame.columnconfigure((0, 1, 2), weight=1) # 3 cột cho 3 nút
         
-        ctk.CTkButton(button_frame, text="Thêm Điều Kiện", command=self.handle_add_prerequisite, **APP_BUTTON_STYLE_YELLOW).grid(row=0, column=0, padx=10, pady=(5, 5), sticky="ew")
-        ctk.CTkButton(button_frame, text="Xóa Điều Kiện", command=self.handle_delete_prerequisite, **APP_BUTTON_STYLE_RED).grid(row=1, column=0, padx=10, pady=5, sticky="ew")
-        ctk.CTkButton(button_frame, text="Làm Mới", command=self.load_all_data, **APP_BUTTON_STYLE_YELLOW).grid(row=2, column=0, padx=10, pady=5, sticky="ew")
+        # Sắp xếp lại các nút
+        ctk.CTkButton(button_frame, text="Thêm", command=self.handle_add_prerequisite, **APP_BUTTON_STYLE_YELLOW).grid(row=0, column=0, padx=5, pady=(5, 5), sticky="ew")
+        
+    def _setup_input_fields(self, input_frame):
+        input_frame.columnconfigure((1, 3), weight=1)
+        input_frame.columnconfigure(2, weight=0) # Cột cho các nút
+        
+        # ComboBox Môn chính (MAMH)
+        ctk.CTkLabel(input_frame, text="Môn học chính:", **APP_LABEL_STYLE).grid(row=0, column=0, padx=(15, 5), pady=10, sticky="w")
+        combo_mamh = ctk.CTkComboBox(input_frame, **APP_COMBOBOX_STYLE, values=[])
+        combo_mamh.grid(row=0, column=1, padx=5, pady=10, sticky="ew")
+        self.entries['mamh_combo'] = combo_mamh
+
+        # ComboBox Môn tiên quyết (MAMH_TRUOC)
+        ctk.CTkLabel(input_frame, text="Môn học tiên quyết:", **APP_LABEL_STYLE).grid(row=1, column=0, padx=(15, 5), pady=10, sticky="w")
+        combo_mamh_truoc = ctk.CTkComboBox(input_frame, **APP_COMBOBOX_STYLE, values=[])
+        combo_mamh_truoc.grid(row=1, column=1, padx=5, pady=10, sticky="ew")
+        self.entries['mamh_truoc_combo'] = combo_mamh_truoc
+
+        # Frame chứa các nút
+        button_frame = ctk.CTkFrame(input_frame, fg_color="transparent")
+        button_frame.grid(row=0, column=2, rowspan=2, columnspan=2, padx=15, pady=10, sticky="nsew")
+        button_frame.columnconfigure((0, 1, 2), weight=1) # 3 cột cho 3 nút
+        
+        # Sắp xếp lại các nút
+        ctk.CTkButton(button_frame, text="Thêm", command=self.handle_add_prerequisite, **APP_BUTTON_STYLE_YELLOW).grid(row=0, column=0, padx=5, pady=(5, 5), sticky="ew")
+        
+        ctk.CTkButton(button_frame, text="Sửa", command=self.handle_update_prerequisite, **APP_BUTTON_STYLE_YELLOW).grid(row=0, column=1, padx=5, pady=(5, 5), sticky="ew")
+        
+        ctk.CTkButton(button_frame, text="Xóa", command=self.handle_delete_prerequisite, **APP_BUTTON_STYLE_RED).grid(row=0, column=2, padx=5, pady=(5, 5), sticky="ew")
+        
+        ctk.CTkButton(button_frame, text="Làm Mới", command=self.load_all_data, **APP_BUTTON_STYLE_YELLOW).grid(row=1, column=0, columnspan=3, padx=5, pady=5, sticky="ew")
 
 
     def _setup_dkien_treeview(self, parent_frame):
@@ -210,6 +239,67 @@ class PrerequisiteTab(ctk.CTkFrame):
                 messagebox.showwarning("Lỗi Toàn Vẹn", f"Lỗi: {e}")
         except Exception as e:
             messagebox.showerror("Lỗi Thêm Mới", f"Lỗi không xác định khi thêm điều kiện: {e}")
+            
+    def handle_update_prerequisite(self):
+        """
+        Sửa một ràng buộc. 
+        Thực hiện bằng cách: Xóa ràng buộc CŨ (từ Treeview) 
+        và Thêm ràng buộc MỚI (từ ComboBox).
+        """
+        
+        # 1. Lấy ràng buộc CŨ từ Treeview (dòng đang chọn)
+        selected_item = self.tree_dkien.selection()
+        if not selected_item:
+            messagebox.showwarning("Chưa chọn", "Vui lòng click chọn một ràng buộc trong bảng để Sửa.")
+            return
+        
+        try:
+            old_values = self.tree_dkien.item(selected_item[0], 'values')
+            old_mamh = old_values[0]
+            old_mamh_truoc = old_values[2]
+        except (IndexError, KeyError):
+            messagebox.showerror("Lỗi", "Không thể lấy thông tin ràng buộc cũ từ Treeview.")
+            return
+
+        # 2. Lấy ràng buộc MỚI từ ComboBox (đã bị người dùng thay đổi)
+        new_mamh, new_mamh_truoc = self._get_and_validate_dkien_data()
+        
+        if new_mamh is None: # Validation (ví dụ: để trống) đã thất bại
+            return
+
+        # 3. Kiểm tra xem có thay đổi không
+        if new_mamh == old_mamh and new_mamh_truoc == old_mamh_truoc:
+            messagebox.showinfo("Thông tin", "Không có thay đổi nào được thực hiện.")
+            return
+            
+        # 4. Xác nhận
+        if not messagebox.askyesno("Xác nhận Sửa", 
+                                   f"Bạn có chắc muốn sửa ràng buộc:\n\n"
+                                   f"CŨ: {old_mamh_truoc} -> {old_mamh}\n"
+                                   f"MỚI: {new_mamh_truoc} -> {new_mamh}\n\n"
+                                   f"Thao tác này sẽ Xóa cái cũ và Thêm cái mới."):
+            return
+
+        # 5. Thực hiện Xóa CŨ và Thêm MỚI
+        try:
+            # Xóa cái cũ trước
+            self.db_manager.delete_prerequisite(old_mamh, old_mamh_truoc)
+            
+            # Thêm cái mới
+            try:
+                self.db_manager.add_prerequisite(new_mamh, new_mamh_truoc)
+            except Exception as add_e:
+                # Lỗi khi thêm: Cố gắng khôi phục (thêm lại cái cũ)
+                messagebox.showerror("Lỗi khi Thêm Mới", f"Đã xóa ràng buộc cũ, nhưng không thể thêm ràng buộc mới:\n{add_e}\n\nVui lòng thêm lại thủ công.")
+                self.load_all_data()
+                return
+
+            messagebox.showinfo("Thành công", "Đã cập nhật ràng buộc thành công.")
+            self.load_all_data()
+
+        except Exception as e:
+            messagebox.showerror("Lỗi Sửa", f"Có lỗi xảy ra trong quá trình sửa:\n{e}")
+            self.load_all_data()
 
     def handle_delete_prerequisite(self):
         # Lấy dữ liệu từ ComboBox (đã được điền bằng cách click vào Treeview)
