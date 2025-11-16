@@ -11,10 +11,11 @@ Giao diện chính sử dụng **CustomTkinter (CTk)** để mang lại trải n
 Prototype này cung cấp:  
 - Màn hình **đăng nhập**.  
 - Cửa sổ chính có **nhiều tab (Notebook)**.  
-- Các chức năng **CRUD đầy đủ** cho 4 module:
+- Các chức năng **CRUD đầy đủ** cho 5 module:
   - **Sinh viên**
   - **Môn học**
   - **Học phần**
+  - **Điều kiện**
   - **Bảng điểm**  
 
 Ứng dụng nhằm giúp sinh viên **thực hành tích hợp GUI ↔ DB**, xử lý **input/validation**, và **áp dụng truy vấn tham số hóa an toàn**.
@@ -106,6 +107,11 @@ pip install -r requirements.txt
 ### 📚 **Module Quản lý Học phần (`course_tab.py`)**
 - CRUD và tìm kiếm học phần.  
 - `CTkComboBox` (readonly) hiển thị **MAMH** từ danh sách môn học.  
+
+---
+
+### 📚 **Module Quản lý Điều kiện Môn học tiên quyết (`prerequisite_tab`)**
+- CRUD điều kiện tiên quyết.    
 
 ---
 
